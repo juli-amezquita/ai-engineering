@@ -1,0 +1,11 @@
+# Secretos: nunca entran en git
+.env
+.env.*
+!.env.example
+
+# Entorno virtual y cachés de Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
