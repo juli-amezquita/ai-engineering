@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: SecretStr | None = None
     ANTHROPIC_API_KEY: SecretStr | None = None
     LLM_PROVIDER: Literal["openai", "anthropic"] = "anthropic"
-    LLM_MODEL: str = "claude-haiku-4-5"
+    LLM_MODEL: str = "claude-haiku-5-5"
 
     # Aplicación
     APP_ENV: Literal["development", "staging", "production"] = "development"
