@@ -132,8 +132,12 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
             "Los perfiles de habilidades son información personal protegida por la CCPA/CPRA, que "
             "en California también cubre a los empleados: cada persona ve y corrige el suyo, y "
             "RR. HH. solo ve agregados por planta salvo consentimiento.",
-            "Las certificaciones de seguridad (formación MSHA) se muestran con su vigencia, pero la "
-            "fuente oficial sigue siendo el sistema de formación.",
+            "La formación de seguridad MSHA (Parte 46, que cubre el cemento y los áridos) incluye un "
+            "reciclaje anual: el perfil muestra su vigencia, pero la fuente oficial sigue siendo el "
+            "sistema de formación.",
+            "Si las plantas están sindicadas, las vacantes y las promociones siguen el convenio "
+            "colectivo (publicación de puestos y antigüedad): el buscador sugiere candidatos y "
+            "orienta la formación, pero no sustituye ese proceso.",
             "Se asume que el HRIS y el sistema de formación exponen una API. Si solo exportan "
             "ficheros, hay que sumar unas 30 horas de backend. El consumo de la API del LLM se "
             "factura aparte.",
@@ -143,21 +147,23 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
         title="App de escucha continua para conductores y personal de planta",
         project_type="App móvil (iOS y Android) con panel web",
         meeting_summary=(
-            "Una concretera de California, con unos 3.000 empleados entre conductores de camiones "
-            "hormigonera, operadores de planta y personal de canteras, quiere saber cómo está su "
-            "plantilla antes de que la rotación se dispare: le cuesta mucho retener conductores. "
-            "Este personal no tiene correo corporativo ni ordenador, así que las encuestas anuales "
-            "apenas llegan. Piden una app para el móvil con encuestas de pulso de tres preguntas a "
-            "la semana, reconocimientos entre compañeros y un canal anónimo para avisar de "
-            "problemas, incluidos los de seguridad. RR. HH. quiere un panel con los resultados por "
-            "planta y alertas cuando una planta empeore varias semanas seguidas. Les preocupa mucho "
-            "el anonimato: los jefes de planta no deben poder identificar a nadie. Buena parte de "
-            "la plantilla habla español, y algunos conductores, punyabí."
+            "Una concretera del sur de California, con unas 1,200 personas entre conductores de "
+            "camiones hormigonera (la mayoría, con unos 500 camiones), operadores de sus 30 plantas "
+            "y personal de canteras, quiere saber cómo está su plantilla antes de que la rotación se "
+            "dispare: le cuesta mucho retener conductores, que se quejan de los horarios irregulares "
+            "y de cuándo pueden hacer sus pausas. Este personal no tiene correo corporativo ni "
+            "ordenador, así que las encuestas anuales apenas llegan. Piden una app para el móvil con "
+            "encuestas de pulso de tres preguntas a la semana, reconocimientos entre compañeros y un "
+            "canal anónimo para avisar de problemas, incluidos los de seguridad. RR. HH. quiere un "
+            "panel con los resultados por planta y alertas cuando una planta empeore varias semanas "
+            "seguidas. Les preocupa mucho el anonimato: los jefes de planta no deben poder "
+            "identificar a nadie. Los conductores están representados por los Teamsters, y buena "
+            "parte de la plantilla prefiere el español."
         ),
         project_summary=(
             "App móvil multiplataforma con encuestas de pulso semanales, reconocimientos y un canal "
-            "anónimo para avisos de seguridad y otros problemas, en inglés, español y punyabí, con "
-            "acceso por número de teléfono y modo sin conexión para canteras sin cobertura. Un panel "
+            "anónimo para avisos de seguridad y otros problemas, en inglés y español, con acceso "
+            "por número de teléfono y modo sin conexión para canteras sin cobertura. Un panel "
             "web muestra a RR. HH. los resultados por planta, solo en grupos de 10 respuestas o "
             "más, y alerta de tendencias de desgaste y fatiga."
         ),
@@ -165,8 +171,8 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
             Task("Descubrimiento y diseño de las encuestas con RR. HH. y seguridad", "Gestión de proyecto", 25),
             Task("Diseño UX/UI móvil: responder en menos de un minuto, también con guantes y a pleno sol", "Diseño UX/UI", 60),
             Task("App multiplataforma: encuestas, reconocimientos y canal anónimo", "Móvil", 160),
-            Task("Soporte en inglés, español y punyabí, y modo sin conexión para canteras sin cobertura", "Móvil", 30),
-            Task("API, programación de encuestas y notificaciones push", "Backend", 90),
+            Task("Soporte en inglés y español, y modo sin conexión para canteras sin cobertura", "Móvil", 30),
+            Task("API, programación de encuestas y notificaciones push, nunca en pausas ni fuera del turno", "Backend", 90),
             Task("Acceso con número de teléfono y código SMS", "Backend", 30),
             Task("Anonimato: umbral mínimo de 10 respuestas por grupo", "Backend", 30),
             Task("Panel web de RR. HH. con resultados por planta", "Frontend", 80),
@@ -180,17 +186,19 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
         ),
         duration="10-12 semanas, incluida la revisión de las tiendas de apps",
         risks=(
-            "Las encuestas se responden durante el turno y, en el caso de los conductores, solo con "
-            "el camión detenido: en California, responder fuera del turno puede considerarse tiempo "
-            "de trabajo pagado. Se propone un piloto en 3 plantas antes de desplegar en toda la "
-            "empresa.",
+            "Las encuestas se responden durante el turno y nunca en las pausas de comida o descanso, "
+            "que en California deben quedar libres de toda tarea; responder fuera del turno puede "
+            "considerarse tiempo de trabajo pagado. Los conductores solo responden con el camión "
+            "detenido, porque la ley prohíbe usar el móvil en la mano al conducir. Se propone un "
+            "piloto en 3 plantas antes de desplegar en toda la empresa.",
             "Las respuestas sobre bienestar y fatiga pueden ser información personal sensible según "
             "la CPRA: se usan solo de forma agregada y se declaran en el aviso de privacidad para "
             "empleados.",
             "El canal anónimo recibirá avisos de seguridad: no sustituye los procedimientos formales "
             "ante Cal/OSHA o MSHA, y la empresa debe definir quién los atiende y en qué plazo.",
-            "Si los conductores o el personal de planta están sindicados, conviene informar al "
-            "sindicato antes del piloto, y el calendario puede ajustarse.",
+            "La app afecta a las condiciones de trabajo de conductores representados por los "
+            "Teamsters: conviene acordarla con el sindicato antes del piloto, y el calendario puede "
+            "ajustarse.",
             "Los SMS a números de EE. UU. exigen registrar la marca y la campaña (10DLC), lo que "
             "lleva unas semanas. El coste de los SMS se factura aparte.",
         ),
@@ -200,18 +208,20 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
         project_type="Integración de datos interna con dashboard",
         meeting_summary=(
             "Un grupo de materiales de construcción (cemento, áridos y hormigón premezclado) con "
-            "unos 2.500 empleados en cinco plantas y canteras de California presenta cada año el "
-            "informe de datos salariales al California Civil Rights Department (CRD), además del "
-            "informe aparte de los trabajadores que contrata a través de agencias. Quiere "
-            "adelantarse a reclamaciones bajo la California Equal Pay Act, que exige igual salario "
-            "por trabajo sustancialmente similar sin distinguir por sexo, raza o etnia. Los datos "
-            "están repartidos entre el HRIS, la nómina de cada planta y un Excel con la valoración "
-            "de puestos, y la paga incluye muchas horas extra, pluses de turno y obras públicas con "
-            "salario prevaleciente (prevailing wage). Hoy el informe se hace a mano y lleva un mes. "
+            "unas 2,500 personas en California, repartidas en dos cementeras, una docena de canteras "
+            "y unas 40 plantas de hormigón, presenta cada año el informe de datos salariales al "
+            "California Civil Rights Department (CRD), además del informe aparte de los trabajadores "
+            "que contrata a través de agencias. Quiere adelantarse a reclamaciones bajo la "
+            "California Equal Pay Act, que exige igual salario por trabajo sustancialmente similar "
+            "sin distinguir por sexo, raza o etnia. Los datos están repartidos entre el HRIS, dos "
+            "sistemas de nómina heredados de adquisiciones y un Excel con la valoración de puestos. "
+            "Buena parte de la plantilla de planta y transporte tiene convenio colectivo, y la paga "
+            "incluye muchas horas extra, pluses de turno y el salario prevaleciente de los "
+            "conductores que entregan en obra pública. Hoy el informe se hace a mano y lleva un mes. "
             "Piden automatizarlo: unificar los datos cada mes, calcular la brecha por categoría de "
-            "puesto, explicar qué parte se debe a factores legítimos como la antigüedad y avisar "
-            "cuando una brecha no explicada pase del 5 %. RR. HH. quiere además simular cuánto "
-            "costaría cerrar las brechas con un presupuesto dado."
+            "puesto, explicar qué parte se debe a factores legítimos como la antigüedad o las "
+            "escalas del convenio y avisar cuando una brecha no explicada pase del 5 %. RR. HH. "
+            "quiere además simular cuánto costaría cerrar las brechas con un presupuesto dado."
         ),
         project_summary=(
             "Pipeline mensual que une HRIS, nóminas y valoración de puestos en un almacén de datos, "
@@ -222,8 +232,8 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
         ),
         tasks=(
             Task("Descubrimiento: inventario de fuentes y categorías de trabajo similar en planta, cantera, transporte y oficinas", "Gestión de proyecto", 40),
-            Task("Conectores con el HRIS y las nóminas de las cinco plantas y canteras", "Ingeniería de datos", 80),
-            Task("Limpieza y normalización de conceptos salariales (horas extra, pluses de turno y salario prevaleciente) y modelo de datos", "Ingeniería de datos", 90),
+            Task("Conectores con el HRIS y los dos sistemas de nómina", "Ingeniería de datos", 80),
+            Task("Unificación de los códigos de nómina, separación de horas extra, pluses y salario prevaleciente, y modelo de datos", "Ingeniería de datos", 90),
             Task("Seudonimización de los datos personales en el pipeline", "Ingeniería de datos", 30),
             Task("Modelo de brecha ajustada por factores legítimos", "IA / ML", 60),
             Task("Generación de los informes anuales para el CRD, incluido el de trabajadores de agencias", "Ingeniería de datos", 40),
@@ -240,9 +250,15 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
         risks=(
             "Qué puestos hacen un trabajo sustancialmente similar lo decide la empresa con su "
             "asesoría legal: el proyecto lo implementa, no lo decide.",
-            "Cada planta usa códigos de concepto salarial distintos, y el salario prevaleciente "
-            "cambia por condado y por obra. Se asume un máximo de tres años de histórico; con más, "
-            "la limpieza crece.",
+            "Los dos sistemas de nómina usan códigos de concepto distintos. Se asume un máximo de "
+            "tres años de histórico; con más, la limpieza crece.",
+            "En los puestos con convenio, el salario base lo fija la escala por categoría y "
+            "antigüedad, así que las brechas suelen aparecer en el reparto de horas extra y en los "
+            "puestos fuera de convenio (supervisión, ventas y oficinas): el modelo los analiza por "
+            "separado.",
+            "Desde 2016 (ley AB 219), los conductores que entregan hormigón en obra pública cobran "
+            "salario prevaleciente según la ubicación de la planta: hay que separarlo del salario "
+            "base para no confundirlo con una brecha.",
             "Hay pocas mujeres en planta, cantera y transporte, así que muchas categorías tienen "
             "grupos pequeños: los resultados se muestran con un tamaño mínimo de grupo y se "
             "interpretan con cautela.",
