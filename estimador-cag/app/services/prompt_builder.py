@@ -10,7 +10,9 @@ El formato sigue la gestión de contexto en CAG:
 - las mismas secciones que tendrá la respuesta, porque el modelo imita lo que ve.
 """
 
-from app.context.examples import ESTIMATION_EXAMPLES, ReferenceEstimation
+from decimal import ROUND_HALF_UP, Decimal
+
+from app.context.examples import CONTINGENCY_RATE, ESTIMATION_EXAMPLES, ReferenceEstimation
 
 EXAMPLE_DELIMITER = "===== ESTIMACIÓN DE REFERENCIA {number} ====="
 END_DELIMITER = "===== FIN DE LAS ESTIMACIONES DE REFERENCIA ====="
@@ -21,6 +23,15 @@ def format_number(value: int) -> str:
     return f"{value:,}"
 
 
+def format_hours(value: Decimal) -> str:
+    """Horas con un decimal, porque los imprevistos del 10 % pueden dejar décimas (42.4)."""
+    return f"{value:,.1f}"
+
+
+def format_percent(fraction: Decimal) -> str:
+    return f"{(fraction * 100).quantize(Decimal('1'), rounding=ROUND_HALF_UP)} %"
+
+
 def format_usd(amount: int) -> str:
     """'USD' explícito en vez de '$', que en Latinoamérica también usan otras monedas."""
     return f"{format_number(amount)} USD"
@@ -29,9 +40,18 @@ def format_usd(amount: int) -> str:
 def format_estimation(number: int, example: ReferenceEstimation) -> str:
     """Formatea una estimación: lo que pidió el cliente y el presupuesto que se le dio."""
     task_rows = [
-        f"| {task.name} | {task.role} | {task.hours} | {task.rate} USD/h | {format_usd(task.cost)} |"
+        f"| {task.name} | "
+        + ", ".join(f"{role} {hours}" for role, hours in task.hours_by_role.items())
+        + f" | {format_number(task.total_hours)} |"
         for task in example.tasks
     ]
+    budget_rows = [
+        f"| {budget.role} | {budget.location} | {format_number(budget.base_hours)} "
+        f"| {format_hours(budget.contingency_hours)} | {format_hours(budget.total_hours)} "
+        f"| {format_percent(example.dedication(budget))} | {format_usd(budget.amount)} |"
+        for budget in example.role_budgets
+    ]
+    expense_rows = [f"| {expense.name} | {format_usd(expense.amount)} |" for expense in example.expenses]
     lines = [
         EXAMPLE_DELIMITER.format(number=number),
         f"Proyecto: {example.title}",
@@ -46,16 +66,35 @@ def format_estimation(number: int, example: ReferenceEstimation) -> str:
         example.project_summary,
         "",
         "### Desglose de tareas",
-        "| Tarea | Perfil | Horas | Tarifa | Coste |",
-        "|---|---|---|---|---|",
+        "| Tarea | Horas por perfil | Horas |",
+        "|---|---|---|",
         *task_rows,
-        f"| **Total** | | **{format_number(example.total_hours)}** | | **{format_usd(example.total_cost)}** |",
+        f"| **Total, sin imprevistos** | | **{format_number(example.base_hours)}** |",
         "",
-        "### Equipo recomendado",
-        example.team,
+        "### Equipo y presupuesto por profesional",
+        f"Un profesional por perfil. Cada uno suma un {format_percent(CONTINGENCY_RATE)} de horas de "
+        f"imprevistos. La dedicación es la media sobre las {example.duration_weeks} semanas del proyecto. "
+        f"Tarifa media del proyecto, igual para todo el equipo: {example.hourly_rate:.2f} USD/h.",
+        "",
+        f"| Profesional | Ubicación | Horas base | Imprevistos ({format_percent(CONTINGENCY_RATE)}) "
+        "| Horas totales | Dedicación media | Importe |",
+        "|---|---|---|---|---|---|---|",
+        *budget_rows,
+        f"| **Total** | | **{format_number(example.base_hours)}** | **{format_hours(example.contingency_hours)}** "
+        f"| **{format_hours(example.total_hours)}** | | **{format_usd(example.fees)}** |",
+        "",
+        "### Gastos reembolsables, facturados a coste",
+        "| Gasto | Importe |",
+        "|---|---|",
+        *expense_rows,
+        f"| **Total** | **{format_usd(example.expenses_total)}** |",
+        "",
+        "### Precio total",
+        f"Honorarios {format_usd(example.fees)} + gastos reembolsables {format_usd(example.expenses_total)} "
+        f"= **{format_usd(example.total_price)}**",
         "",
         "### Duración estimada",
-        example.duration,
+        f"{example.duration_weeks} semanas: {example.phases}",
         "",
         "### Riesgos y supuestos",
         *(f"- {risk}" for risk in example.risks),

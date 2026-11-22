@@ -7,54 +7,109 @@ integración de datos interna.
 
 Los datos ya vienen preparados, como pide la gestión de contexto en CAG:
 - una sola moneda y unidad de tarifa (USD por hora), igual en todos los ejemplos;
-- tarifas de referencia del mercado de California;
-- horas en múltiplos de 5;
-- costes y totales calculados en Python, no escritos a mano ni dejados al modelo;
+- la consultora es pequeña y trabaja con un equipo mixto: gestión, liderazgo técnico y
+  consultoría de RR. HH. en Los Ángeles; backend, datos, IA/ML y DevOps en otras zonas de
+  EE. UU.; diseño, frontend, full-stack, móvil y QA en Latinoamérica;
+- cada proyecto tiene una sola tarifa media para todo el equipo, la que le deja a la
+  consultora un 30 % de utilidad neta, y nunca pasa de 150 USD/h, el precio de mercado de
+  una consultora pequeña (análisis v6 del vault);
+- las horas salen de un desglose por tarea y perfil, y cada profesional suma un 10 % de
+  imprevistos;
+- la dedicación de cada profesional se calcula con sus horas y la duración, y no puede
+  pasar del 100 %;
+- importes y totales calculados en Python, no escritos a mano ni dejados al modelo;
 - clientes descritos por su sector y su tamaño, sin nombres reales.
 
 El texto que llega al prompt lo genera app/services/prompt_builder.py.
 """
 
 from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal
 
-# Tarifas de la empresa por perfil, en USD por hora, para clientes de California.
-# Son la referencia de precios que el modelo necesita para no inventar cifras.
-HOURLY_RATES_USD: dict[str, int] = {
-    "Gestión de proyecto": 140,
-    "Diseño UX/UI": 130,
-    "Frontend": 145,
-    "Backend": 155,
-    "Móvil": 155,
-    "Ingeniería de datos": 165,
-    "IA / ML": 190,
-    "QA": 105,
-    "DevOps": 160,
+# Perfiles del equipo y desde dónde trabaja cada uno.
+ROLE_LOCATIONS: dict[str, str] = {
+    "Gestión de proyecto": "Los Ángeles",
+    "Consultoría de RR. HH.": "Los Ángeles",
+    "Liderazgo técnico": "Los Ángeles",
+    "Backend": "EE. UU.",
+    "Ingeniería de datos": "EE. UU.",
+    "Ciencia de datos": "EE. UU.",
+    "IA / ML": "EE. UU.",
+    "DevOps": "EE. UU.",
+    "Diseño UX/UI": "Latinoamérica",
+    "Frontend": "Latinoamérica",
+    "Full-stack": "Latinoamérica",
+    "Móvil": "Latinoamérica",
+    "QA": "Latinoamérica",
 }
+
+# Precio de mercado de una consultora pequeña: tope de la tarifa media de un proyecto.
+MAX_HOURLY_RATE_USD = Decimal("150")
+
+# Imprevistos: un 10 % sobre las horas de cada profesional.
+CONTINGENCY_RATE = Decimal("0.10")
+
+# Jornada de referencia para calcular la dedicación de cada profesional.
+HOURS_PER_WEEK = 40
 
 
 @dataclass(frozen=True)
 class Task:
-    """Una línea del desglose: qué se hace, qué perfil lo hace y cuántas horas lleva."""
+    """Una línea del desglose: qué se hace y cuántas horas pone cada perfil."""
 
     name: str
-    role: str
-    hours: int
+    hours_by_role: dict[str, int]
 
     def __post_init__(self) -> None:
-        if self.role not in HOURLY_RATES_USD:
-            raise ValueError(f"El perfil {self.role!r} no tiene tarifa en HOURLY_RATES_USD")
-        if self.hours <= 0 or self.hours % 5 != 0:
-            raise ValueError(f"Las horas de {self.name!r} deben ser positivas y múltiplo de 5")
+        if not self.hours_by_role:
+            raise ValueError(f"La tarea {self.name!r} no tiene horas asignadas")
+        for role, hours in self.hours_by_role.items():
+            if role not in ROLE_LOCATIONS:
+                raise ValueError(f"El perfil {role!r} no está en ROLE_LOCATIONS")
+            if not isinstance(hours, int) or hours <= 0:
+                raise ValueError(f"Las horas de {role!r} en {self.name!r} deben ser un entero positivo")
 
     @property
-    def rate(self) -> int:
-        """Tarifa del perfil, en USD por hora."""
-        return HOURLY_RATES_USD[self.role]
+    def total_hours(self) -> int:
+        return sum(self.hours_by_role.values())
+
+
+@dataclass(frozen=True)
+class Expense:
+    """Un gasto reembolsable del proyecto, que se factura a coste (viajes, traducción...)."""
+
+    name: str
+    amount: int  # USD
+
+    def __post_init__(self) -> None:
+        if self.amount <= 0:
+            raise ValueError(f"El gasto {self.name!r} debe ser positivo")
+
+
+@dataclass(frozen=True)
+class RoleBudget:
+    """El presupuesto de horas de un profesional: horas base, imprevistos y su importe."""
+
+    role: str
+    base_hours: int
+    rate: Decimal  # tarifa media del proyecto, en USD por hora
 
     @property
-    def cost(self) -> int:
-        """Coste de la tarea en USD, calculado: horas × tarifa."""
-        return self.hours * self.rate
+    def location(self) -> str:
+        return ROLE_LOCATIONS[self.role]
+
+    @property
+    def contingency_hours(self) -> Decimal:
+        return self.base_hours * CONTINGENCY_RATE
+
+    @property
+    def total_hours(self) -> Decimal:
+        return self.base_hours + self.contingency_hours
+
+    @property
+    def amount(self) -> int:
+        """Importe en USD (horas totales × tarifa), redondeado al dólar."""
+        return int((self.total_hours * self.rate).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
 
 @dataclass(frozen=True)
@@ -66,17 +121,63 @@ class ReferenceEstimation:
     meeting_summary: str  # qué pedía el cliente en la reunión original
     project_summary: str  # el alcance que propuso la estimación, en 2 o 3 frases
     tasks: tuple[Task, ...]
-    team: str
-    duration: str
+    hourly_rate: Decimal  # tarifa media para todo el equipo, en USD por hora
+    expenses: tuple[Expense, ...]
+    duration_weeks: int
+    phases: str  # cómo se reparten las semanas
     risks: tuple[str, ...]  # riesgos y supuestos clave
 
-    @property
-    def total_hours(self) -> int:
-        return sum(task.hours for task in self.tasks)
+    def __post_init__(self) -> None:
+        if self.duration_weeks <= 0:
+            raise ValueError(f"La duración de {self.title!r} debe ser positiva")
+        if not 0 < self.hourly_rate <= MAX_HOURLY_RATE_USD:
+            raise ValueError(
+                f"La tarifa de {self.title!r} debe ser positiva y no pasar de {MAX_HOURLY_RATE_USD} USD/h"
+            )
+        for budget in self.role_budgets:
+            if self.dedication(budget) > 1:
+                raise ValueError(
+                    f"{budget.role} en {self.title!r} necesita más de una persona a tiempo "
+                    f"completo durante {self.duration_weeks} semanas"
+                )
 
     @property
-    def total_cost(self) -> int:
-        return sum(task.cost for task in self.tasks)
+    def role_budgets(self) -> tuple[RoleBudget, ...]:
+        """Un presupuesto por profesional, en el orden en que aparece cada perfil."""
+        hours: dict[str, int] = {}
+        for task in self.tasks:
+            for role, role_hours in task.hours_by_role.items():
+                hours[role] = hours.get(role, 0) + role_hours
+        return tuple(RoleBudget(role, base_hours, self.hourly_rate) for role, base_hours in hours.items())
+
+    def dedication(self, budget: RoleBudget) -> Decimal:
+        """Fracción de jornada completa que ocupa el profesional durante todo el proyecto."""
+        return budget.total_hours / (self.duration_weeks * HOURS_PER_WEEK)
+
+    @property
+    def base_hours(self) -> int:
+        return sum(budget.base_hours for budget in self.role_budgets)
+
+    @property
+    def contingency_hours(self) -> Decimal:
+        return sum((budget.contingency_hours for budget in self.role_budgets), Decimal(0))
+
+    @property
+    def total_hours(self) -> Decimal:
+        return self.base_hours + self.contingency_hours
+
+    @property
+    def fees(self) -> int:
+        """Honorarios: la suma de los importes de cada profesional."""
+        return sum(budget.amount for budget in self.role_budgets)
+
+    @property
+    def expenses_total(self) -> int:
+        return sum(expense.amount for expense in self.expenses)
+
+    @property
+    def total_price(self) -> int:
+        return self.fees + self.expenses_total
 
 
 ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
@@ -97,34 +198,74 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
             "formación. Usan Microsoft 365 y su HRIS tiene API."
         ),
         project_summary=(
-            "MVP de una plataforma web, usable en tablet en planta, que extrae habilidades y "
-            "certificaciones de los registros de formación y de las órdenes de trabajo con un LLM, "
-            "las mapea a la taxonomía O*NET del Departamento de Trabajo de EE. UU. y permite buscar "
-            "candidatos internos para puestos críticos. Cada persona valida su perfil, RR. HH. ve "
-            "las brechas por planta y el buscador se prueba contra sesgos."
+            "Plataforma web, usable en tablet en planta, que extrae habilidades y certificaciones "
+            "de los registros de formación y de las órdenes de trabajo con un LLM, las mapea a la "
+            "taxonomía O*NET del Departamento de Trabajo de EE. UU. y permite buscar candidatos "
+            "internos para puestos críticos. Cada persona valida su perfil, RR. HH. ve las brechas "
+            "por planta y el buscador se prueba contra sesgos. Termina con un piloto en una planta, "
+            "el despliegue a toda la plantilla y dos semanas de hipercuidado."
         ),
         tasks=(
-            Task("Descubrimiento con RR. HH. y operaciones, y adaptación de O*NET a los puestos de planta y cantera", "Gestión de proyecto", 30),
-            Task("Diseño UX/UI del perfil de habilidades y del buscador", "Diseño UX/UI", 50),
-            Task("API, modelo de datos e inicio de sesión con Microsoft (SSO)", "Backend", 80),
-            Task("Integración con el HRIS y el sistema de formación: puestos y certificaciones", "Backend", 40),
-            Task("Extracción de habilidades de formación y órdenes de trabajo con un LLM, mapeadas a O*NET", "IA / ML", 90),
-            Task("Buscador semántico de candidatos internos para puestos críticos", "IA / ML", 60),
-            Task("Pruebas de sesgo del buscador y registro de sus resultados", "IA / ML", 30),
-            Task("Frontend adaptado a tablet: perfil, validación por la persona y buscador", "Frontend", 90),
-            Task("Panel de brechas por planta y de puestos críticos con jubilaciones próximas", "Frontend", 40),
-            Task("Privacidad: aviso a empleados, derechos CCPA/CPRA y registro de accesos", "Backend", 30),
-            Task("Pruebas funcionales y validación de la extracción con 50 perfiles", "QA", 50),
-            Task("Despliegue en la nube y CI/CD", "DevOps", 25),
+            Task(
+                "Descubrimiento con RR. HH., operaciones, mantenimiento y seguridad, con visitas a una planta y una cantera",
+                {"Gestión de proyecto": 32, "Liderazgo técnico": 24, "Diseño UX/UI": 24, "Consultoría de RR. HH.": 24},
+            ),
+            Task("Adaptación de O*NET a unos 60 puestos de planta y cantera", {"Consultoría de RR. HH.": 64, "IA / ML": 16}),
+            Task(
+                "Diseño UX/UI para tablet: perfil, validación, buscador y panel, con pruebas con 8 usuarios",
+                {"Diseño UX/UI": 152},
+            ),
+            Task("Arquitectura, modelo de datos y API", {"Liderazgo técnico": 80, "Backend": 80}),
+            Task("Inicio de sesión con Microsoft (SSO) y roles", {"Backend": 40}),
+            Task("Integración con el HRIS y el sistema de formación", {"Backend": 96}),
+            Task("Importación de las órdenes de trabajo del sistema de mantenimiento", {"Backend": 48}),
+            Task(
+                "Extracción de habilidades con un LLM: pipeline, conjunto de evaluación y revisión humana",
+                {"IA / ML": 168},
+            ),
+            Task("Mapeo de habilidades y certificaciones a O*NET", {"IA / ML": 64}),
+            Task("Buscador semántico de candidatos internos", {"IA / ML": 96, "Backend": 24}),
+            Task(
+                "Pruebas de sesgo del buscador y registro de sus resultados durante 4 años",
+                {"IA / ML": 48, "Consultoría de RR. HH.": 16},
+            ),
+            Task("Frontend para tablet: perfil, validación por la persona y buscador", {"Frontend": 216}),
+            Task(
+                "Panel de brechas por planta y de puestos críticos con jubilaciones próximas",
+                {"Frontend": 88, "Backend": 24},
+            ),
+            Task(
+                "Privacidad y seguridad: aviso a empleados, derechos CCPA/CPRA y registro de accesos",
+                {"Backend": 56, "Liderazgo técnico": 24},
+            ),
+            Task("Infraestructura en la nube, entornos, CI/CD y monitorización", {"DevOps": 96}),
+            Task("Plan de pruebas y pruebas funcionales, de regresión y de accesibilidad", {"QA": 168}),
+            Task(
+                "Piloto en una planta: validación de la extracción con 50 perfiles y ajustes",
+                {"Gestión de proyecto": 16, "IA / ML": 40, "QA": 32, "Consultoría de RR. HH.": 16, "Frontend": 24, "Liderazgo técnico": 16},
+            ),
+            Task(
+                "Despliegue a toda la plantilla, formación a RR. HH. y supervisores, documentación y traspaso",
+                {"Gestión de proyecto": 24, "Liderazgo técnico": 24, "Backend": 16, "DevOps": 16, "Consultoría de RR. HH.": 8},
+            ),
+            Task("Hipercuidado durante las dos semanas siguientes al lanzamiento", {"Backend": 40, "Frontend": 24, "IA / ML": 16}),
+            Task("Liderazgo técnico: revisiones de código, decisiones de arquitectura y seguridad", {"Liderazgo técnico": 80}),
+            Task("Gestión del proyecto: planificación, seguimiento semanal, comité mensual y riesgos", {"Gestión de proyecto": 96}),
         ),
-        team=(
-            "1 backend, 1 frontend y 1 especialista en IA/ML a tiempo completo; diseño UX/UI y "
-            "gestión de proyecto a tiempo parcial; QA en las últimas cuatro semanas."
+        hourly_rate=Decimal("146.79"),
+        expenses=(
+            Expense("Viajes a una planta, una cantera y la planta piloto (3 viajes de 240 millas a 0.725 USD/milla)", 522),
+            Expense("API de modelos de lenguaje y embeddings durante el desarrollo y la evaluación", 400),
+            Expense("Entornos de desarrollo y pruebas en la nube durante 4 meses", 1600),
         ),
-        duration="8-10 semanas",
+        duration_weeks=16,
+        phases=(
+            "3 de descubrimiento y diseño, 9 de construcción, 2 de piloto en una planta y 2 de "
+            "despliegue e hipercuidado."
+        ),
         risks=(
             "Muchos operadores no tienen un CV actualizado: la fuente principal son los registros de "
-            "formación y las órdenes de trabajo. La extracción se valida con una muestra de 50 "
+            "formación y las órdenes de trabajo. La extracción se valida en el piloto con 50 "
             "perfiles antes de procesar toda la plantilla.",
             "El buscador apoya decisiones de movilidad y promoción. En California, usar un sistema "
             "automatizado en decisiones de empleo exige poder demostrar que no discrimina, por eso "
@@ -134,13 +275,18 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
             "RR. HH. solo ve agregados por planta salvo consentimiento.",
             "La formación de seguridad MSHA (Parte 46, que cubre el cemento y los áridos) incluye un "
             "reciclaje anual: el perfil muestra su vigencia, pero la fuente oficial sigue siendo el "
-            "sistema de formación.",
+            "sistema de formación. Las visitas a la cantera requieren la formación sobre los riesgos "
+            "del lugar que MSHA exige a los visitantes, y la imparte el cliente.",
             "Si las plantas están sindicadas, las vacantes y las promociones siguen el convenio "
             "colectivo (publicación de puestos y antigüedad): el buscador sugiere candidatos y "
             "orienta la formación, pero no sustituye ese proceso.",
+            "Existen plataformas SaaS de habilidades. Este desarrollo se justifica si las fuentes "
+            "propias del sector (órdenes de trabajo y registros de MSHA) pesan más que lo que ofrece "
+            "una plataforma estándar; conviene compararlo durante el descubrimiento. El soporte "
+            "después del hipercuidado se presupuesta aparte.",
             "Se asume que el HRIS y el sistema de formación exponen una API. Si solo exportan "
-            "ficheros, hay que sumar unas 30 horas de backend. El consumo de la API del LLM se "
-            "factura aparte.",
+            "ficheros, hay que sumar unas 40 horas de backend. El consumo de la API del LLM y la "
+            "nube en producción se facturan aparte.",
         ),
     ),
     ReferenceEstimation(
@@ -165,32 +311,73 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
             "anónimo para avisos de seguridad y otros problemas, en inglés y español, con acceso "
             "por número de teléfono y modo sin conexión para canteras sin cobertura. Un panel "
             "web muestra a RR. HH. los resultados por planta, solo en grupos de 10 respuestas o "
-            "más, y alerta de tendencias de desgaste y fatiga."
+            "más, y alerta de tendencias de desgaste y fatiga. Incluye un piloto en 3 plantas, el "
+            "despliegue en las 30 y dos semanas de hipercuidado."
         ),
         tasks=(
-            Task("Descubrimiento y diseño de las encuestas con RR. HH. y seguridad", "Gestión de proyecto", 25),
-            Task("Diseño UX/UI móvil: responder en menos de un minuto, también con guantes y a pleno sol", "Diseño UX/UI", 60),
-            Task("App multiplataforma: encuestas, reconocimientos y canal anónimo", "Móvil", 160),
-            Task("Soporte en inglés y español, y modo sin conexión para canteras sin cobertura", "Móvil", 30),
-            Task("API, programación de encuestas y notificaciones push, nunca en pausas ni fuera del turno", "Backend", 90),
-            Task("Acceso con número de teléfono y código SMS", "Backend", 30),
-            Task("Anonimato: umbral mínimo de 10 respuestas por grupo", "Backend", 30),
-            Task("Panel web de RR. HH. con resultados por planta", "Frontend", 80),
-            Task("Alertas de tendencia de desgaste y fatiga por planta", "Ingeniería de datos", 40),
-            Task("Pruebas en dispositivos reales, también en planta y cantera, y QA", "QA", 60),
-            Task("Publicación en App Store y Google Play, y CI/CD", "DevOps", 30),
+            Task(
+                "Descubrimiento con RR. HH., seguridad y operaciones, con visitas a 2 plantas y una reunión con representantes de los Teamsters",
+                {"Gestión de proyecto": 32, "Consultoría de RR. HH.": 24, "Diseño UX/UI": 24, "Liderazgo técnico": 16},
+            ),
+            Task(
+                "Diseño de las encuestas de pulso (preguntas validadas de compromiso, carga de trabajo y fatiga) y su versión en español",
+                {"Consultoría de RR. HH.": 72},
+            ),
+            Task(
+                "Diseño UX/UI móvil y del panel web: responder en menos de un minuto, también con guantes y a pleno sol",
+                {"Diseño UX/UI": 168},
+            ),
+            Task("Arquitectura, modelo de datos y API", {"Liderazgo técnico": 64, "Backend": 64}),
+            Task(
+                "Programación de encuestas y notificaciones push según el turno, nunca en pausas ni fuera del turno",
+                {"Backend": 80},
+            ),
+            Task("Acceso con número de teléfono y código SMS", {"Backend": 40}),
+            Task(
+                "Anonimato: umbral mínimo de 10 respuestas por grupo y separación de identidades",
+                {"Backend": 48, "Liderazgo técnico": 16},
+            ),
+            Task("App multiplataforma: encuestas, reconocimientos y canal anónimo", {"Móvil": 320}),
+            Task("Modo sin conexión y sincronización para canteras sin cobertura", {"Móvil": 64}),
+            Task("Soporte en inglés y español", {"Móvil": 24}),
+            Task("Envío de los avisos de seguridad del canal anónimo a su responsable, con plazos", {"Backend": 32}),
+            Task("Panel web de RR. HH. con resultados por planta", {"Frontend": 176}),
+            Task("Alertas de tendencia de desgaste y fatiga por planta", {"Ingeniería de datos": 80}),
+            Task("Infraestructura, CI/CD móvil y publicación en App Store y Google Play", {"DevOps": 96}),
+            Task(
+                "Pruebas en dispositivos reales, también Android de gama baja, en planta y en cantera",
+                {"QA": 216},
+            ),
+            Task(
+                "Piloto en 3 plantas: soporte, análisis de la participación y ajustes",
+                {"Gestión de proyecto": 24, "Consultoría de RR. HH.": 24, "Móvil": 40, "Backend": 24, "Ingeniería de datos": 16},
+            ),
+            Task(
+                "Despliegue en las 30 plantas: materiales en inglés y español, y formación a jefes de planta y RR. HH.",
+                {"Gestión de proyecto": 24, "Consultoría de RR. HH.": 16},
+            ),
+            Task("Hipercuidado durante las dos semanas siguientes al lanzamiento", {"Móvil": 40, "Backend": 24}),
+            Task("Liderazgo técnico: revisiones de código, decisiones de arquitectura y seguridad", {"Liderazgo técnico": 72}),
+            Task("Gestión del proyecto: planificación, seguimiento semanal, comité mensual y riesgos", {"Gestión de proyecto": 108}),
         ),
-        team=(
-            "2 perfiles móviles, 1 backend y 1 frontend; diseño UX/UI, datos y gestión de proyecto "
-            "a tiempo parcial; QA desde la mitad del proyecto."
+        hourly_rate=Decimal("114.75"),
+        expenses=(
+            Expense("Viajes a 2 plantas en el descubrimiento y a 3 en el piloto (5 viajes de 120 millas a 0.725 USD/milla)", 435),
+            Expense("Traducción profesional al español de la app, las encuestas y los materiales (unas 12,000 palabras a 0.14 USD)", 1680),
+            Expense("Registro de la marca y la campaña de SMS (10DLC) y cuota de la campaña durante el proyecto", 101),
+            Expense("Dispositivos de prueba: dos Android de gama baja y uno resistente", 900),
+            Expense("Entornos de desarrollo y pruebas en la nube durante 4.5 meses", 1800),
         ),
-        duration="10-12 semanas, incluida la revisión de las tiendas de apps",
+        duration_weeks=18,
+        phases=(
+            "3 de descubrimiento y diseño, 9 de construcción, 1 de revisión en las tiendas de apps, "
+            "3 de piloto en 3 plantas y 2 de despliegue e hipercuidado."
+        ),
         risks=(
             "Las encuestas se responden durante el turno y nunca en las pausas de comida o descanso, "
             "que en California deben quedar libres de toda tarea; responder fuera del turno puede "
             "considerarse tiempo de trabajo pagado. Los conductores solo responden con el camión "
-            "detenido, porque la ley prohíbe usar el móvil en la mano al conducir. Se propone un "
-            "piloto en 3 plantas antes de desplegar en toda la empresa.",
+            "detenido, porque la ley prohíbe usar el móvil en la mano al conducir.",
             "Las respuestas sobre bienestar y fatiga pueden ser información personal sensible según "
             "la CPRA: se usan solo de forma agregada y se declaran en el aviso de privacidad para "
             "empleados.",
@@ -200,7 +387,13 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
             "Teamsters: conviene acordarla con el sindicato antes del piloto, y el calendario puede "
             "ajustarse.",
             "Los SMS a números de EE. UU. exigen registrar la marca y la campaña (10DLC), lo que "
-            "lleva unas semanas. El coste de los SMS se factura aparte.",
+            "lleva unas semanas. El coste de los SMS y la nube en producción se facturan aparte.",
+            "Las cuentas de desarrollador de Apple (99 USD al año) y Google Play (25 USD) se abren a "
+            "nombre del cliente, que es quien publica la app.",
+            "Existen plataformas SaaS de escucha al empleado. Este desarrollo se justifica por el "
+            "acceso sin correo corporativo, el modo sin conexión y el acuerdo con el sindicato; "
+            "conviene compararlo durante el descubrimiento. El soporte después del hipercuidado se "
+            "presupuesta aparte.",
         ),
     ),
     ReferenceEstimation(
@@ -228,28 +421,56 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
             "con los datos personales seudonimizados. Separa horas extra, pluses y salario "
             "prevaleciente; calcula la brecha bruta y ajustada por categoría, sexo y raza o etnia; "
             "genera los informes anuales para el CRD; avisa de las brechas no explicadas por encima "
-            "del 5 % y ofrece un simulador de ajustes con presupuesto."
+            "del 5 % y ofrece un simulador de ajustes con presupuesto. La puesta en marcha incluye "
+            "un primer cierre mensual en paralelo con el proceso manual."
         ),
         tasks=(
-            Task("Descubrimiento: inventario de fuentes y categorías de trabajo similar en planta, cantera, transporte y oficinas", "Gestión de proyecto", 40),
-            Task("Conectores con el HRIS y los dos sistemas de nómina", "Ingeniería de datos", 80),
-            Task("Unificación de los códigos de nómina, separación de horas extra, pluses y salario prevaleciente, y modelo de datos", "Ingeniería de datos", 90),
-            Task("Seudonimización de los datos personales en el pipeline", "Ingeniería de datos", 30),
-            Task("Modelo de brecha ajustada por factores legítimos", "IA / ML", 60),
-            Task("Generación de los informes anuales para el CRD, incluido el de trabajadores de agencias", "Ingeniería de datos", 40),
-            Task("Simulador de escenarios de ajuste salarial", "Backend", 40),
-            Task("Dashboard de brechas para RR. HH.", "Frontend", 60),
-            Task("Orquestación mensual, monitorización y alertas del pipeline", "DevOps", 40),
-            Task("Validación de las cifras contra nómina y QA", "QA", 50),
+            Task(
+                "Descubrimiento: inventario de fuentes, sesión con la asesoría legal y propuesta de categorías de trabajo similar en planta, cantera, transporte y oficinas",
+                {"Gestión de proyecto": 32, "Consultoría de RR. HH.": 40, "Liderazgo técnico": 24, "Ciencia de datos": 16},
+            ),
+            Task("Conectores con el HRIS y los dos sistemas de nómina", {"Ingeniería de datos": 128}),
+            Task(
+                "Unificación de los códigos de nómina, separación de horas extra, pluses y salario prevaleciente, y modelo de datos",
+                {"Ingeniería de datos": 144, "Consultoría de RR. HH.": 32},
+            ),
+            Task("Seudonimización de los datos personales y permisos por rol", {"Liderazgo técnico": 40}),
+            Task("Reglas de calidad de datos y conciliación con la nómina", {"Ingeniería de datos": 64}),
+            Task(
+                "Modelo de brecha ajustada por factores legítimos, con tratamiento de los grupos pequeños",
+                {"Ciencia de datos": 160, "Consultoría de RR. HH.": 24},
+            ),
+            Task(
+                "Generación de los informes anuales para el CRD, incluido el de trabajadores de agencias",
+                {"Liderazgo técnico": 64, "Consultoría de RR. HH.": 16},
+            ),
+            Task("Alertas de brechas no explicadas por encima del 5 %", {"Ingeniería de datos": 24, "Ciencia de datos": 16}),
+            Task("Simulador de escenarios de ajuste salarial con presupuesto", {"Ciencia de datos": 56, "Full-stack": 56}),
+            Task("Dashboard de brechas para RR. HH.", {"Full-stack": 144, "Diseño UX/UI": 56}),
+            Task("Orquestación mensual, monitorización y alertas del pipeline", {"DevOps": 80}),
+            Task("Validación de las cifras contra la nómina y QA", {"QA": 120, "Consultoría de RR. HH.": 24}),
+            Task(
+                "Primer cierre mensual en paralelo con el proceso manual, formación a RR. HH. y documentación de la metodología para la asesoría legal",
+                {"Gestión de proyecto": 16, "Ciencia de datos": 32, "Liderazgo técnico": 24, "Consultoría de RR. HH.": 16},
+            ),
+            Task("Hipercuidado durante el primer cierre mensual", {"Ingeniería de datos": 32}),
+            Task("Liderazgo técnico: revisiones, decisiones de arquitectura y seguridad de los datos", {"Liderazgo técnico": 64}),
+            Task("Gestión del proyecto: planificación, seguimiento semanal, comité mensual y riesgos", {"Gestión de proyecto": 96}),
         ),
-        team=(
-            "2 perfiles de ingeniería de datos y 1 especialista en IA/ML con base estadística; "
-            "frontend, backend y gestión de proyecto a tiempo parcial; QA en la fase de validación."
+        hourly_rate=Decimal("149.94"),
+        expenses=(
+            Expense("Viajes a las oficinas centrales (2 viajes de 100 millas a 0.725 USD/milla)", 145),
+            Expense("Entorno de datos de desarrollo y pruebas en la nube durante 4 meses", 2000),
         ),
-        duration="9-11 semanas",
+        duration_weeks=16,
+        phases=(
+            "3 de descubrimiento y modelo de datos, 9 de construcción, 2 de validación y 2 de "
+            "primer cierre mensual en paralelo con el proceso manual."
+        ),
         risks=(
             "Qué puestos hacen un trabajo sustancialmente similar lo decide la empresa con su "
-            "asesoría legal: el proyecto lo implementa, no lo decide.",
+            "asesoría legal: el proyecto lo implementa, no lo decide. El análisis se hace bajo la "
+            "dirección de esa asesoría, para proteger la confidencialidad entre abogado y cliente.",
             "Los dos sistemas de nómina usan códigos de concepto distintos. Se asume un máximo de "
             "tres años de histórico; con más, la limpieza crece.",
             "En los puestos con convenio, el salario base lo fija la escala por categoría y "
@@ -266,6 +487,9 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
             "tiempo. Si el CRD cambia la plantilla del informe, la adaptación se presupuesta aparte.",
             "Los salarios individuales solo los ve RR. HH., con permisos por rol. Las licencias del "
             "almacén de datos no están incluidas.",
+            "Existen plataformas SaaS de equidad salarial. Este desarrollo se justifica por las dos "
+            "nóminas heredadas, los convenios y el salario prevaleciente; conviene compararlo durante "
+            "el descubrimiento. El soporte después del primer cierre se presupuesta aparte.",
         ),
     ),
 )
