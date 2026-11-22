@@ -1,4 +1,4 @@
-"""Servicio del LLM: envía la transcripción con el contexto CAG y devuelve el borrador de la estimación.
+"""Servicio del LLM: envía la transcripción con el contexto CAG y devuelve el borrador.
 
 La llamada es single-turn, el modo transaccional del ejercicio:
 - [system]    instrucciones + estimaciones de referencia (en el parámetro `system=` de Anthropic,
@@ -40,6 +40,15 @@ logger = logging.getLogger(__name__)
 
 MAX_TOKENS = 16_000
 
+# Precio por millón de tokens (entrada, salida) de los modelos que se usan, para estimar el costo
+# de cada llamada. claude-haiku-5-5 cuesta más si el prompt pasa de 100K tokens.
+MODEL_PRICES_USD_PER_MTOK: dict[str, tuple[float, float]] = {"claude-haiku-5-5": (0.10, 0.50)}
+LONG_PROMPT_PRICES_USD_PER_MTOK: dict[str, tuple[int, float, float]] = {
+    "claude-haiku-5-5": (100_000, 0.50, 2.50),  # desde 100K tokens de prompt
+}
+CACHE_WRITE_MULTIPLIER = 1.25  # escribir en la caché cuesta 1.25 veces la entrada
+CACHE_READ_MULTIPLIER = 0.10  # leerla, una décima parte
+
 
 class EstimationError(RuntimeError):
     """El modelo respondió, pero su respuesta no sirve como estimación."""
@@ -58,10 +67,31 @@ class DraftResult:
     output_tokens: int  # incluye los tokens de thinking
     latency_ms: int
 
+    @property
+    def estimated_cost_usd(self) -> float | None:
+        """Costo de la llamada según el precio público del modelo; None si no se conoce."""
+        prices = MODEL_PRICES_USD_PER_MTOK.get(self.model)
+        if prices is None:
+            return None
+        input_price, output_price = prices
+        prompt_tokens = (
+            self.input_tokens + self.cache_creation_input_tokens + self.cache_read_input_tokens
+        )
+        long_prompt = LONG_PROMPT_PRICES_USD_PER_MTOK.get(self.model)
+        if long_prompt is not None and prompt_tokens > long_prompt[0]:
+            input_price, output_price = long_prompt[1], long_prompt[2]
+        cost = (
+            self.input_tokens * input_price
+            + self.cache_creation_input_tokens * input_price * CACHE_WRITE_MULTIPLIER
+            + self.cache_read_input_tokens * input_price * CACHE_READ_MULTIPLIER
+            + self.output_tokens * output_price
+        ) / 1_000_000
+        return round(cost, 6)
+
 
 @lru_cache
 def get_client() -> AsyncAnthropic:
-    """Un solo cliente por proceso. Solo Anthropic: el wrapper multiproveedor llega en la sesión 3."""
+    """Un solo cliente por proceso. Solo Anthropic: el multiproveedor llega en la sesión 3."""
     settings = get_settings()
     if settings.LLM_PROVIDER != "anthropic":
         raise NotImplementedError(
@@ -89,7 +119,9 @@ async def generate_draft(transcription: str) -> DraftResult:
     response = await get_client().messages.create(
         model=settings.LLM_MODEL,
         max_tokens=MAX_TOKENS,
-        system=[{"type": "text", "text": get_system_prompt(), "cache_control": {"type": "ephemeral"}}],
+        system=[
+            {"type": "text", "text": get_system_prompt(), "cache_control": {"type": "ephemeral"}}
+        ],
         messages=[{"role": "user", "content": transcription}],
         output_config={"format": get_output_format()},
     )
@@ -105,7 +137,8 @@ async def generate_draft(transcription: str) -> DraftResult:
     try:
         draft = EstimationDraft.model_validate_json(text)
     except ValidationError as error:
-        raise EstimationError(f"La respuesta del modelo no cumple el esquema: {error.error_count()} errores") from error
+        detail = f"La respuesta del modelo no cumple el esquema: {error.error_count()} errores"
+        raise EstimationError(detail) from error
 
     usage = response.usage
     result = DraftResult(
@@ -119,7 +152,8 @@ async def generate_draft(transcription: str) -> DraftResult:
         latency_ms=latency_ms,
     )
     logger.info(
-        "Borrador generado: modelo=%s entrada=%d caché escrita=%d caché leída=%d salida=%d latencia=%d ms",
+        "Borrador generado: modelo=%s entrada=%d caché escrita=%d caché leída=%d salida=%d "
+        "latencia=%d ms",
         result.model,
         result.input_tokens,
         result.cache_creation_input_tokens,
