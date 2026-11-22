@@ -26,13 +26,16 @@ transcripción ─► LLM (system prompt: rol + 3 estimaciones de referencia + r
 
 ## Requisitos
 
-- Python 3.11 y [uv](https://docs.astral.sh/uv/).
+- Git, Python 3.11 y [uv](https://docs.astral.sh/uv/).
 - Una API key de Anthropic.
 
 ## Instalación
 
+El proyecto está en la rama `entregable-session-2`, no en `main`: un `git clone` sin rama descarga `main`, que es el material de referencia del máster y no tiene esta carpeta. Descarga directamente la rama:
+
 ```bash
-cd estimador-cag
+git clone -b entregable-session-2 https://github.com/juli-amezquita/ai-engineering.git
+cd ai-engineering/estimador-cag
 uv sync
 cp .env.example .env
 ```
