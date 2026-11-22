@@ -9,7 +9,7 @@ Este es mi fork del repositorio del máster. Las ramas `main`, `session_N` y `se
 
 | Sesión | Tema | Rama | Fecha límite | Estado |
 |---|---|---|---|---|
-| 2 | Scaffolding FastAPI con arquitectura CAG | [`entregable-session-2`](../../tree/entregable-session-2) | 2026-11-22 | En curso |
+| 2 | Scaffolding FastAPI con arquitectura CAG | [`entregable-session-2`](../../tree/entregable-session-2) | 2026-11-22 | Entregado |
 
 ## Proyecto
 
