@@ -62,4 +62,10 @@ class EstimationDraft(BaseModel):
     phases: list[Phase] = Field(description="Etapas consecutivas del proyecto, en orden")
     tasks: list[Task] = Field(description="Desglose de tareas con las horas de cada perfil")
     expenses: list[Expense] = Field(description="Gastos reembolsables; lista vacía si no hay")
+    open_scope_questions: list[str] = Field(
+        description=(
+            "Puntos del alcance que la reunión dejó sin decidir (opcionales, condicionados o sin "
+            "responsable claro). No se estiman: los decide la consultora. Lista vacía si no hay"
+        )
+    )
     internal_risks: list[str] = Field(description="Riesgos para la consultora, solo para el informe interno")

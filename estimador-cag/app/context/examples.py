@@ -187,6 +187,7 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
                 _expense("API de modelos de lenguaje y embeddings durante el desarrollo y la evaluación", 1, "global", 400),
                 _expense("Entornos de desarrollo y pruebas en la nube", 4, "meses", 400),
             ],
+            open_scope_questions=[],
             internal_risks=[
                 "Muchos operadores no tienen un CV actualizado: la fuente principal son los registros de formación y las órdenes de trabajo. Si la extracción no llega a la calidad esperada en el piloto con 50 perfiles, hay que dedicar más horas de IA/ML antes de procesar toda la plantilla.",
                 "Si el HRIS y el sistema de formación solo exportan ficheros, hacen falta unas 40 horas más de backend.",
@@ -208,7 +209,9 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
             "panel con los resultados por planta y alertas cuando una planta empeore varias semanas "
             "seguidas. Les preocupa mucho el anonimato: los jefes de planta no deben poder "
             "identificar a nadie. Los conductores están representados por los Teamsters, y buena "
-            "parte de la plantilla prefiere el español."
+            "parte de la plantilla prefiere el español. Mencionaron que más adelante les gustaría "
+            "conectar la app con su sistema de despacho, para enviar la encuesta al terminar cada "
+            "entrega, pero no lo decidieron."
         ),
         draft=EstimationDraft(
             is_software_project=True,
@@ -338,6 +341,9 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
                 _expense("Dispositivos de prueba: dos Android de gama baja y uno resistente", 3, "dispositivos", 300),
                 _expense("Entornos de desarrollo y pruebas en la nube", 4.5, "meses", 400),
             ],
+            open_scope_questions=[
+                "Conexión con el sistema de despacho para enviar la encuesta al terminar cada entrega: el cliente la mencionó para más adelante, sin decidirla. No está estimada.",
+            ],
             internal_risks=[
                 "Si la empresa no acuerda la app con los Teamsters antes del piloto, el calendario se alarga y el precio cerrado no cubre las semanas de más.",
                 "La revisión en las tiendas de apps puede rechazar la primera versión y retrasar el piloto.",
@@ -362,7 +368,9 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
             "Piden automatizarlo: unificar los datos cada mes, calcular la brecha por categoría de "
             "puesto, explicar qué parte se debe a factores legítimos como la antigüedad o las "
             "escalas del convenio y avisar cuando una brecha no explicada pase del 5 %. RR. HH. "
-            "quiere además simular cuánto costaría cerrar las brechas con un presupuesto dado."
+            "quiere además simular cuánto costaría cerrar las brechas con un presupuesto dado. "
+            "También preguntaron si el sistema podría preparar la carta de ajuste salarial de cada "
+            "persona, pero quedaron en confirmarlo con su asesoría legal."
         ),
         draft=EstimationDraft(
             is_software_project=True,
@@ -475,6 +483,9 @@ ESTIMATION_EXAMPLES: tuple[ReferenceEstimation, ...] = (
             expenses=[
                 _expense("Viajes a las oficinas centrales: 2 viajes de 100 millas a la tarifa del IRS", 200, "millas", IRS_MILEAGE_RATE_USD),
                 _expense("Entorno de datos de desarrollo y pruebas en la nube", 4, "meses", 500),
+            ],
+            open_scope_questions=[
+                "Carta de ajuste salarial de cada persona: el cliente lo preguntó y quedó en confirmarlo con su asesoría legal. No está estimada.",
             ],
             internal_risks=[
                 "Los dos sistemas de nómina usan códigos de concepto distintos: con más de tres años de histórico la limpieza crece, y el precio cerrado no la cubre.",

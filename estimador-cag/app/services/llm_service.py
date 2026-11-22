@@ -9,14 +9,16 @@ La llamada es single-turn, el modo transaccional del ejercicio:
 Decisiones:
 - Structured outputs (`output_config.format`): la API garantiza que la respuesta cumple el
   esquema. El modelo solo estima y redacta; los cálculos los hace Python.
-- `messages.create` y la validación con Pydantic aparte, en lugar de `messages.parse`: así se
-  comprueba `stop_reason` antes de interpretar el JSON, porque una respuesta cortada o rechazada
-  no cumple el esquema.
+- `messages.stream` con `get_final_message()` y la validación con Pydantic aparte, en lugar de
+  `messages.parse`: así se comprueba `stop_reason` antes de interpretar el JSON, porque una
+  respuesta cortada o rechazada no cumple el esquema.
 - `AsyncAnthropic` con `await`, para no bloquear el event loop de FastAPI.
 - El cliente y el system prompt se crean en la primera llamada, no al importar el módulo: el
   router y los tests pueden importar este archivo sin una API key.
-- `max_tokens` explícito y con margen: el JSON de una estimación ocupa unos 5,000 tokens, y el
-  thinking adaptativo de `claude-haiku-5-5` también consume tokens de salida.
+- `max_tokens` de 32,000, con streaming: el JSON de una estimación ocupa unos 5,000 tokens, pero
+  el thinking adaptativo de `claude-haiku-5-5` puede pasar de 10,000. Con 16,000 una estimación
+  real se cortó. Por encima de unos 21,000, el SDK exige streaming, porque la llamada podría
+  pasar de 10 minutos.
 - La respuesta se lee uniendo los bloques de texto: el primero puede ser de thinking.
 - Prompt caching en el system prompt: es idéntico en cada llamada, y al reutilizarlo se paga
   una décima parte del precio de entrada.
@@ -34,11 +36,11 @@ from pydantic import ValidationError
 
 from app.config import get_settings
 from app.schemas.draft import EstimationDraft
-from app.services.prompt_builder import build_system_prompt
+from app.services.prompt_builder import build_system_prompt, build_user_message
 
 logger = logging.getLogger(__name__)
 
-MAX_TOKENS = 16_000
+MAX_TOKENS = 32_000
 
 # Precio por millón de tokens (entrada, salida) de los modelos que se usan, para estimar el costo
 # de cada llamada. claude-haiku-5-5 cuesta más si el prompt pasa de 100K tokens.
@@ -66,6 +68,7 @@ class DraftResult:
     cache_read_input_tokens: int  # entrada leída de la caché
     output_tokens: int  # incluye los tokens de thinking
     latency_ms: int
+    scope_changes: str | None = None  # cambios de alcance que indicó la consultora
 
     @property
     def estimated_cost_usd(self) -> float | None:
@@ -112,19 +115,20 @@ def get_output_format() -> dict:
     return {"type": "json_schema", "schema": transform_schema(EstimationDraft)}
 
 
-async def generate_draft(transcription: str) -> DraftResult:
-    """Pide al modelo el borrador de la estimación de la reunión."""
+async def generate_draft(transcription: str, scope_changes: str | None = None) -> DraftResult:
+    """Pide al modelo el borrador de la estimación, con los cambios de alcance si los hay."""
     settings = get_settings()
     start = time.perf_counter()
-    response = await get_client().messages.create(
+    async with get_client().messages.stream(
         model=settings.LLM_MODEL,
         max_tokens=MAX_TOKENS,
         system=[
             {"type": "text", "text": get_system_prompt(), "cache_control": {"type": "ephemeral"}}
         ],
-        messages=[{"role": "user", "content": transcription}],
+        messages=[{"role": "user", "content": build_user_message(transcription, scope_changes)}],
         output_config={"format": get_output_format()},
-    )
+    ) as stream:
+        response = await stream.get_final_message()
     latency_ms = round((time.perf_counter() - start) * 1000)
 
     if response.stop_reason == "max_tokens":
@@ -150,6 +154,7 @@ async def generate_draft(transcription: str) -> DraftResult:
         cache_read_input_tokens=usage.cache_read_input_tokens or 0,
         output_tokens=usage.output_tokens,
         latency_ms=latency_ms,
+        scope_changes=scope_changes,
     )
     logger.info(
         "Borrador generado: modelo=%s entrada=%d caché escrita=%d caché leída=%d salida=%d "

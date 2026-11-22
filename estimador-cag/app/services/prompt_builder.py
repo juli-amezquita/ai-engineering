@@ -56,9 +56,10 @@ Cal/OSHA y MSHA.
 
 # Tarea
 El mensaje del usuario es la transcripción de una reunión con un cliente. Estima el proyecto \
-que se discutió en ella: el alcance, las etapas con sus semanas y sus entregables, las tareas \
+con el alcance que se acordó en ella: las etapas con sus semanas y sus entregables, las tareas \
 con las horas de cada perfil, los gastos reembolsables y los riesgos. Redacta además los \
-textos de la propuesta de valor para el cliente.
+textos de la propuesta de valor para el cliente. El alcance no lo decides tú: sigue las \
+reglas de alcance que hay después de las referencias.
 
 No calcules costos, tarifas, márgenes, precios ni totales. Con tus datos, el sistema valora y \
 presupuesta el proyecto en Python y prepara dos documentos: un informe interno para la \
@@ -79,7 +80,8 @@ concreto, y habla de su problema, de la solución y de sus beneficios. Sin horas
 precios: las cifras las pone el sistema.
 - `phases` son las etapas del cronograma que verá el cliente, con lo que recibe al terminar \
 cada una.
-- `tasks` es el desglose interno de horas."""
+- `tasks` es el desglose interno de horas.
+- `open_scope_questions` son los puntos del alcance que la reunión dejó sin decidir."""
 
 
 def build_rules() -> str:
@@ -87,6 +89,22 @@ def build_rules() -> str:
     roles = ", ".join(ROLES)
     contingency = pct(CONTINGENCY_RATE, 0)
     return f"""\
+# Alcance
+- El alcance es el que se acordó en la reunión: lo que pidió el cliente, con las condiciones \
+que puso. Estima exactamente ese alcance. No añadas funcionalidades, entregables, integraciones \
+ni perfiles que nadie pidió, y no quites ni reduzcas nada de lo que se pidió.
+- Sí estimas el trabajo necesario para entregar ese alcance: descubrimiento, diseño, gestión, \
+liderazgo técnico, pruebas, infraestructura y puesta en marcha. Eso no cambia el alcance.
+- Si algo se mencionó sin decidirse (algo opcional, condicionado o sin un responsable claro, \
+como quién produce un contenido), no lo estimes ni lo excluyas por tu cuenta: descríbelo en \
+`open_scope_questions` para que la consultora lo decida, y no lo incluyas en tareas, etapas, \
+entregables, beneficios ni `out_of_scope`.
+- `out_of_scope` solo recoge lo que la reunión excluyó y las exclusiones habituales de la \
+consultora, como el soporte después del hipercuidado o el consumo de la nube y de las APIs \
+en producción.
+- Si el mensaje trae una sección <cambios_de_alcance>, la escribió la consultora y manda sobre \
+la transcripción: aplica esos cambios tal como se indican.
+
 # Reglas de estimación
 - Usa solo estos perfiles, con un profesional por perfil: {roles}.
 - Las horas son horas base, en números enteros y sin imprevistos: el sistema suma un \
@@ -122,3 +140,18 @@ explica por qué en `not_software_reason` y deja vacíos los demás textos y lis
 def build_system_prompt(examples: tuple[ReferenceEstimation, ...] = ESTIMATION_EXAMPLES) -> str:
     """System prompt completo: instrucciones, formato, referencias y, al final, las reglas."""
     return "\n\n".join([SYSTEM_INTRO, format_examples(examples), build_rules()])
+
+
+def build_user_message(transcription: str, scope_changes: str | None = None) -> str:
+    """El mensaje del usuario: la transcripción y, si los hay, los cambios de alcance.
+
+    Sin cambios, el mensaje es la transcripción tal cual. Con cambios, cada parte va entre
+    etiquetas, para que el modelo no confunda lo que dijo el cliente con lo que decide la
+    consultora.
+    """
+    if not scope_changes:
+        return transcription
+    return (
+        f"<transcripcion>\n{transcription}\n</transcripcion>\n\n"
+        f"<cambios_de_alcance>\n{scope_changes}\n</cambios_de_alcance>"
+    )

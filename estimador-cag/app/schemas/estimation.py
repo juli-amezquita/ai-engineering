@@ -11,7 +11,7 @@ la consultora necesita de cada estimación:
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 EXAMPLE_TRANSCRIPTION = (
     "Reunión con la directora de RR. HH. y el gerente de seguridad de un productor de áridos "
@@ -33,6 +33,20 @@ class EstimateRequest(BaseModel):
         description="Transcripción de la reunión con el cliente, en texto plano",
         examples=[EXAMPLE_TRANSCRIPTION],
     )
+    scope_changes: str | None = Field(
+        default=None,
+        max_length=20_000,
+        description=(
+            "Cambios o aclaraciones de alcance que decide la consultora. Mandan sobre la "
+            "transcripción: el modelo no puede cambiar el alcance por su cuenta"
+        ),
+        examples=["Incluir la producción de los contenidos de la Parte 46 en inglés y español."],
+    )
+
+    @field_validator("scope_changes")
+    @classmethod
+    def empty_means_none(cls, value: str | None) -> str | None:
+        return value or None
 
 
 class TokenUsage(BaseModel):
@@ -59,6 +73,9 @@ class EstimateSummary(BaseModel):
     max_cash_needed_usd: int = Field(description="Caja máxima que la consultora adelanta")
     schedule_adjustments: list[str] = Field(
         description="Etapas que Python alargó para que nadie pase del 100 % de dedicación"
+    )
+    open_scope_questions: list[str] = Field(
+        description="Puntos del alcance que la reunión dejó sin decidir: no están estimados"
     )
     warnings: list[str] = Field(description="Alertas del informe interno")
 

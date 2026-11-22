@@ -86,7 +86,7 @@ def _statement_rows(pricing: ProjectPricing) -> list[str]:
     return out
 
 
-def build_internal_report(pricing: ProjectPricing) -> str:
+def build_internal_report(pricing: ProjectPricing, scope_changes: str | None = None) -> str:
     plan, s = pricing.plan, pricing.statement
     draft = plan.draft
     duration = plan.duration_weeks
@@ -132,6 +132,21 @@ def build_internal_report(pricing: ProjectPricing) -> str:
     add("## 2. Alcance")
     add("")
     add(draft.project_summary)
+    add("")
+    if scope_changes:
+        add("**Cambios de alcance indicados por la consultora**, que mandan sobre la transcripción:")
+        add("")
+        add("> " + scope_changes.replace("\n", "\n> "))
+        add("")
+    if draft.open_scope_questions:
+        add(
+            "**Puntos que la reunión dejó sin decidir.** No están estimados ni incluidos en la "
+            "propuesta: decídelos y vuelve a estimar indicando los cambios de alcance."
+        )
+        add("")
+        w.extend(f"- {question}" for question in draft.open_scope_questions)
+    else:
+        add("La reunión no dejó puntos de alcance sin decidir.")
     add("")
 
     # 3. Cronograma
@@ -494,11 +509,24 @@ def build_client_proposal(pricing: ProjectPricing) -> str:
     add("")
     w.extend(f"- {item}" for item in value.out_of_scope)
     add("")
-    add("## 10. Supuestos y condiciones")
+    section = 10
+    if draft.open_scope_questions:
+        add(f"## {section}. Puntos por confirmar")
+        add("")
+        add(
+            "Estos puntos se mencionaron en la reunión, pero no quedaron decididos. No están "
+            "incluidos en esta propuesta: si se incluyen, se actualizan el alcance, el cronograma y "
+            "la inversión."
+        )
+        add("")
+        w.extend(f"- {question}" for question in draft.open_scope_questions)
+        add("")
+        section += 1
+    add(f"## {section}. Supuestos y condiciones")
     add("")
     w.extend(f"- {item}" for item in value.assumptions)
     add("")
-    add("## 11. Validez")
+    add(f"## {section + 1}. Validez")
     add("")
     add(f"Esta propuesta es válida durante {PROPOSAL_VALIDITY_DAYS} días desde su envío.")
     return "\n".join(w).rstrip() + "\n"

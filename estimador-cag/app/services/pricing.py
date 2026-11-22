@@ -319,6 +319,16 @@ def _checks(pricing: "ProjectPricing") -> tuple[Check, ...]:
     )))
     for adjustment in plan.adjustments:
         checks.append(Check(WARNING, f"Python alargó el cronograma propuesto: {adjustment}"))
+    open_questions = len(plan.draft.open_scope_questions)
+    if open_questions:
+        if open_questions == 1:
+            what = "un punto de alcance sin decidir, que no está estimado"
+        else:
+            what = f"{open_questions} puntos de alcance sin decidir, que no están estimados"
+        checks.append(Check(WARNING, (
+            f"La reunión dejó {what} (sección 2). Decide qué entra y vuelve a estimar indicando "
+            "los cambios de alcance."
+        )))
     proposal_total = sum(line.client_amount for line in pricing.lines) + pricing.overhead_client_amount + statement.expenses
     assert proposal_total == statement.price, "la propuesta tiene que sumar el precio total"
     checks.append(Check(OK, f"La propuesta al cliente suma exactamente el precio total: {statement.price:,} USD."))

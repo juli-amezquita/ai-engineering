@@ -27,12 +27,13 @@ def estimate_from_draft(llm: DraftResult) -> EstimationResult:
     """La parte determinista: se puede probar sin llamar al modelo."""
     pricing = price_project(build_plan(llm.draft))
     return EstimationResult(
-        internal_report=build_internal_report(pricing),
+        internal_report=build_internal_report(pricing, scope_changes=llm.scope_changes),
         client_proposal=build_client_proposal(pricing),
         pricing=pricing,
         llm=llm,
     )
 
 
-async def estimate(transcription: str) -> EstimationResult:
-    return estimate_from_draft(await generate_draft(transcription))
+async def estimate(transcription: str, scope_changes: str | None = None) -> EstimationResult:
+    """La estimación completa. `scope_changes` son los cambios de alcance de la consultora."""
+    return estimate_from_draft(await generate_draft(transcription, scope_changes))

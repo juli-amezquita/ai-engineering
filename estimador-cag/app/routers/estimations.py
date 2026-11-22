@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Estimaciones"])
 
-Estimator = Callable[[str], Awaitable[EstimationResult]]
+Estimator = Callable[[str, str | None], Awaitable[EstimationResult]]
 
 
 def get_estimator() -> Estimator:
@@ -71,6 +71,7 @@ def _to_response(result: EstimationResult) -> EstimateResponse:
             net_margin=round(statement.net_margin, 4),
             max_cash_needed_usd=pricing.max_cash_needed,
             schedule_adjustments=list(pricing.plan.adjustments),
+            open_scope_questions=list(llm.draft.open_scope_questions),
             warnings=[check.text for check in pricing.checks if check.status == WARNING],
         ),
         usage=TokenUsage(
@@ -122,7 +123,7 @@ async def create_estimate(
     estimator: Annotated[Estimator, Depends(get_estimator)],
 ) -> EstimateResponse:
     try:
-        result = await estimator(request.transcription)
+        result = await estimator(request.transcription, request.scope_changes)
     except NotASoftwareProjectError as error:
         detail = f"La transcripción no describe un proyecto de software: {error}"
         raise _error(status.HTTP_422_UNPROCESSABLE_CONTENT, detail) from error
