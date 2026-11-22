@@ -1,0 +1,37 @@
+Transcripción de la reunión de descubrimiento. Proyecto ficticio, para probar el estimador.
+
+Asistentes: directora de RR. HH., gerente de Seguridad y Salud (EHS) y superintendente de canteras del cliente; gerente de proyecto y líder técnico de la consultora.
+
+Gerente de proyecto (consultora): Gracias por recibirnos. Para empezar, ¿nos cuentan cómo es hoy la incorporación de una persona nueva en las canteras?
+
+Directora de RR. HH.: Somos Áridos Sierra Norte, un productor de áridos del Valle Central de California. Tenemos unas 350 personas en nueve canteras y tres plantas de trituración y lavado. Cada año contratamos unas 120 personas, casi todas entre marzo y junio, cuando arranca la temporada de obra. El problema es que perdemos a muchas en los primeros 90 días: el año pasado, casi un tercio se fue antes de los tres meses. Y en las entrevistas de salida nos dicen que la primera semana fue caótica.
+
+Gerente de EHS: Además está MSHA. Estamos bajo la Parte 46: cada minero nuevo necesita 24 horas de formación, 8 de ellas antes de empezar a trabajar, la formación en cada tarea antes de hacerla y el reciclaje anual de 8 horas. Hoy lo hacemos con carpetas de papel y presentaciones en una sala. Los supervisores firman a mano el certificado de formación, el formulario 5000-23, y luego alguien lo escanea... cuando se acuerda. En la última inspección nos encontraron registros incompletos en dos canteras y nos pusieron una citación.
+
+Superintendente: Y mis supervisores no tienen tiempo. Uno me dijo que pasa media mañana buscando si un chico ya tiene la formación de la cargadora antes de dejarle subirse.
+
+Líder técnico (consultora): ¿Qué tienen hoy en sistemas?
+
+Directora de RR. HH.: El HRIS, que tiene API, y Microsoft 365 para la oficina. En las canteras hay tablets en las casetas de los supervisores, pero la cobertura es muy mala en varias, así que lo que hagamos tiene que funcionar sin conexión. Y un 40 % de la plantilla de cantera prefiere el español.
+
+Gerente de proyecto (consultora): ¿Qué les gustaría tener?
+
+Directora de RR. HH.: Una app de incorporación para tablet. La persona nueva hace los módulos de la Parte 46 en inglés o en español, con videos cortos y cuestionarios, y el supervisor marca en la tablet la formación de cada tarea y firma ahí mismo. El certificado 5000-23 se genera solo y queda guardado. Que avise antes de que venza el reciclaje anual de cada persona.
+
+Gerente de EHS: Y un panel para mí, por cantera: quién está al día, quién tiene formación pendiente y qué vence este mes. Lo quiero poder enseñar en una inspección sin buscar papeles.
+
+Superintendente: Otra cosa. Los nuevos tienen muchas preguntas: qué hago si veo una grieta en el talud, dónde está la parada de emergencia de la trituradora, cada cuánto se revisa el arnés. Nos gustaría un asistente en la tablet que responda con nuestros manuales de seguridad y procedimientos. Son unos 40 documentos.
+
+Gerente de EHS: Pero me preocupa que se invente cosas. Si no está seguro, que diga de qué manual sale la respuesta y que mande a la persona a su supervisor. En temas de seguridad, una respuesta mala es peor que ninguna.
+
+Líder técnico (consultora): Entendido: respuestas solo a partir de sus documentos, con la fuente citada, y si no hay respuesta en los manuales, derivar al supervisor.
+
+Directora de RR. HH.: También queremos saber si funciona: un seguimiento a los 30, 60 y 90 días con una encuesta corta, y cruzarlo con la rotación por cantera y por supervisor.
+
+Gerente de proyecto (consultora): ¿Plazos?
+
+Directora de RR. HH.: Nos gustaría tenerlo antes de la próxima temporada de contratación, en unos cuatro meses. Podríamos empezar con un piloto en dos canteras. No tenemos sindicato. Y necesitamos un precio cerrado para presentarlo al comité.
+
+Gerente de EHS: Ah, y los contratistas que entran a las canteras necesitan la formación de riesgos del lugar. Si se puede incluir, mejor, pero no es lo principal.
+
+Gerente de proyecto (consultora): Perfecto. Con esto preparamos la estimación y la propuesta.
