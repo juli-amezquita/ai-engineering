@@ -64,6 +64,8 @@ uv run uvicorn app.main:app --reload
 
 ## Probar
 
+Sin API key puedes ver la salida de una llamada real en [`ejemplos-de-salida/`](ejemplos-de-salida/): la respuesta completa, el informe interno y la propuesta para el cliente.
+
 Con la transcripción de prueba del repositorio, que describe un productor ficticio de áridos que quiere una app de incorporación y formación MSHA para sus canteras:
 
 ```bash
@@ -141,6 +143,7 @@ estimador-cag/
 │       └── cost_model.py          # costos por perfil, gastos generales y política comercial
 ├── tests/                         # pytest: estructura, cálculos, servicio del LLM y API
 ├── transcripciones/               # transcripción de prueba
+├── ejemplos-de-salida/            # respuesta, informe interno y propuesta de una llamada real
 ├── .env.example
 └── pyproject.toml / uv.lock
 ```
