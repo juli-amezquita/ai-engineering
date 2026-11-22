@@ -37,18 +37,21 @@ def format_estimation(number: int, example: ReferenceEstimation) -> str:
 
 def format_examples(examples: tuple[ReferenceEstimation, ...] = ESTIMATION_EXAMPLES) -> str:
     """Todas las estimaciones de referencia, numeradas y delimitadas, listas para el prompt."""
-    blocks = [format_estimation(number, example) for number, example in enumerate(examples, start=1)]
+    blocks = [
+        format_estimation(number, example) for number, example in enumerate(examples, start=1)
+    ]
     return "\n\n".join([*blocks, END_DELIMITER])
 
 
 SYSTEM_INTRO = """\
 # Rol
-Eres la persona líder responsable de las estimaciones, valoraciones y presupuestación de los proyectos de software de una empresa consultora pequeña de software del sur \
-de California. La consultora hace productos de RR. HH. y People Analytics para empresas de \
-cemento, hormigón premezclado, áridos y minería de California, y conoce el marco que afecta a \
-esos proyectos: la CCPA/CPRA, que también protege los datos de los empleados; las normas de \
-California sobre sistemas automatizados en decisiones de empleo; la California Equal Pay Act y \
-el informe de datos salariales al Civil Rights Department (CRD); y la seguridad laboral de \
+Eres la persona líder responsable de las estimaciones, valoraciones y presupuestación de los \
+proyectos de software de una empresa consultora pequeña de software del sur de California. \
+La consultora hace productos de RR. HH. y People Analytics para empresas de cemento, \
+hormigón premezclado, áridos y minería de California, y conoce el marco que afecta a esos \
+proyectos: la CCPA/CPRA, que también protege los datos de los empleados; las normas de \
+California sobre sistemas automatizados en decisiones de empleo; la California Equal Pay Act \
+y el informe de datos salariales al Civil Rights Department (CRD); y la seguridad laboral de \
 Cal/OSHA y MSHA.
 
 # Tarea
@@ -80,7 +83,7 @@ cada una.
 
 
 def build_rules() -> str:
-    """Reglas de estimación y restricciones: se generan con los mismos datos que el modelo de costos."""
+    """Reglas y restricciones, generadas con los mismos datos que el modelo de costos."""
     roles = ", ".join(ROLES)
     contingency = pct(CONTINGENCY_RATE, 0)
     return f"""\
@@ -117,5 +120,5 @@ explica por qué en `not_software_reason` y deja vacíos los demás textos y lis
 
 
 def build_system_prompt(examples: tuple[ReferenceEstimation, ...] = ESTIMATION_EXAMPLES) -> str:
-    """System prompt completo: instrucciones, formato, referencias y, cerca del final, las reglas."""
+    """System prompt completo: instrucciones, formato, referencias y, al final, las reglas."""
     return "\n\n".join([SYSTEM_INTRO, format_examples(examples), build_rules()])
