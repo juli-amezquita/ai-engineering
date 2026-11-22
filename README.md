@@ -14,3 +14,5 @@ Este es mi fork del repositorio del máster. Las ramas `main`, `session_N` y `se
 ## Proyecto
 
 El proyecto vive en `estimador-cag/`, que nace con el entregable de la sesión 2. Su README explica cómo instalarlo, configurarlo y probarlo.
+
+El workflow `.github/workflows/estimador-cag.yml` valida en GitHub Actions la estructura del proyecto y que el servicio funcione, en cada push a `mis-entregables` o a una rama `entregable-session-*`.

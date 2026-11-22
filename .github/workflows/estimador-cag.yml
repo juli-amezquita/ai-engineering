@@ -1,0 +1,53 @@
+# Pipeline del estimador: valida la estructura del proyecto y que el servicio funcione.
+# No llama a la API del proveedor: los tests usan un cliente simulado y una clave falsa.
+name: estimador-cag
+
+on:
+  push:
+    branches: [mis-entregables, "entregable-session-*"]
+    paths: ["estimador-cag/**", ".github/workflows/estimador-cag.yml"]
+  pull_request:
+    paths: ["estimador-cag/**", ".github/workflows/estimador-cag.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: estimador-cag
+    env:
+      # Clave falsa: config.py exige una para arrancar, pero ningún paso llama a la API.
+      ANTHROPIC_API_KEY: sk-ant-clave-falsa-para-ci
+      LOG_LEVEL: INFO
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: estimador-cag/uv.lock
+
+      - name: Instalar las dependencias exactas de uv.lock
+        run: uv sync --locked
+
+      - name: Tests de estructura, cálculos, servicio del LLM y API
+        run: uv run pytest -q
+
+      - name: Arrancar el servidor y comprobar /health y /docs
+        run: |
+          uv run uvicorn app.main:app --port 8000 > uvicorn.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            curl -sf http://localhost:8000/health > /dev/null && break
+            sleep 1
+          done
+          cat uvicorn.log
+          # "provider" asegura que responde este servicio y no otro que escuche en el puerto
+          curl -sf http://localhost:8000/health | tee /dev/stderr | grep -q '"status":"ok".*"provider":"anthropic"'
+          curl -sf -o /dev/null http://localhost:8000/docs
+          curl -sf http://localhost:8000/openapi.json | grep -q '/api/v1/estimate'
