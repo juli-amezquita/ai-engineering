@@ -41,7 +41,11 @@ jobs:
 
       - name: Arrancar el servidor y comprobar /health y /docs
         run: |
-          uv run uvicorn app.main:app --port 8000 > uvicorn.log 2>&1 &
+          # Con el Python del entorno y no con `uv run`: un proceso de uv vivo bloquea la caché,
+          # y la limpieza final de setup-uv (uv cache prune) espera 5 minutos y falla.
+          .venv/bin/python -m uvicorn app.main:app --port 8000 > uvicorn.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2> /dev/null || true' EXIT  # se para aunque falle una comprobación
           for attempt in $(seq 1 30); do
             curl -sf http://localhost:8000/health > /dev/null && break
             sleep 1
