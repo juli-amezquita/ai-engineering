@@ -141,11 +141,40 @@ estimador-cag/
 │   └── context/
 │       ├── examples.py            # las 3 estimaciones de referencia (el contexto CAG)
 │       └── cost_model.py          # costos por perfil, gastos generales y política comercial
-├── tests/                         # pytest: estructura, cálculos, servicio del LLM y API
+├── evals/
+│   └── consistency.py             # evaluador de consistencia: la misma transcripción varias veces
+├── tests/                         # pytest: estructura, cálculos, servicio del LLM, API y evaluador
 ├── transcripciones/               # transcripción de prueba
 ├── ejemplos-de-salida/            # respuesta, informe interno y propuesta de una llamada real
 ├── .env.example
 └── pyproject.toml / uv.lock
+```
+
+## Evaluador de consistencia
+
+El modelo no da siempre la misma estimación para la misma reunión (ver **Limitaciones conocidas**). El evaluador mide cuánto cambia: manda la misma transcripción varias veces al modelo real, calcula cada borrador con el mismo código del servicio y compara las horas base, el precio, las semanas, las horas de cada perfil y los puntos de alcance que quedan por confirmar.
+
+Sirve para juzgar un cambio del prompt, de los ejemplos o del preprocesamiento con números: se mide una línea base, se hace el cambio y se vuelve a medir con la misma transcripción.
+
+```bash
+uv run python -m evals.consistency run transcripciones/onboarding_seguridad_canteras.txt --runs 5 --label linea-base
+```
+
+Usa la API key del `.env` y cuesta dinero, unos 0.01 USD y cerca de un minuto por llamada, así que no corre en los tests ni en el pipeline. La primera llamada va sola, para que las demás lean el system prompt de la caché, y las demás van en paralelo (`--concurrency`, 4 por defecto). Con `--scope-changes archivo.txt` se mide con cambios de alcance.
+
+Cada ejecución queda en `evals/resultados/<fecha>_<etiqueta>/`:
+
+| Archivo | Qué lleva |
+|---|---|
+| `llamada_NN.json` | El borrador del modelo, los tokens, el costo y la latencia, o el error si la llamada falló |
+| `config.json` | El modelo, el commit, una huella del system prompt y una huella de la transcripción (nunca su texto) |
+| `informe.md` | Media, mediana, mínimo, máximo, amplitud y coeficiente de variación de cada cifra; las horas de cada perfil, de más a menos variación; cada llamada y sus puntos por confirmar |
+| `resumen.json` | Las mismas cifras, para guardarlas o compararlas |
+
+Para recalcular el informe con los borradores guardados, sin llamar al modelo, o comparar dos ejecuciones lado a lado:
+
+```bash
+uv run python -m evals.consistency report evals/resultados/<línea base> evals/resultados/<con el cambio>
 ```
 
 ## Tests y pipeline
@@ -159,7 +188,8 @@ Los tests no usan la clave real ni llaman a la API: fijan una clave falsa, no le
 - la estructura de carpetas, que `.env` esté ignorado y que no haya claves en el código;
 - que Python reproduzca los precios del análisis de la consultora y que la propuesta sume el precio sin revelar costos ni márgenes;
 - la forma de la llamada al modelo y el rechazo de respuestas cortadas, rechazadas o fuera del esquema;
-- `/health`, Swagger, el endpoint, cada código de error y que el servidor no arranque sin la clave.
+- `/health`, Swagger, el endpoint, cada código de error y que el servidor no arranque sin la clave;
+- el evaluador de consistencia, con un generador simulado en lugar del modelo.
 
 El workflow `.github/workflows/estimador-cag.yml` lo ejecuta en GitHub Actions en cada push a `mis-entregables` o a una rama `entregable-session-*`. Instala las dependencias exactas de `uv.lock`, pasa los tests y arranca el servidor de verdad para comprobar `/health` y `/docs`.
 
