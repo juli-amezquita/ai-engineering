@@ -6,7 +6,7 @@ import json
 import pytest
 
 from app.context.examples import ESTIMATION_EXAMPLES
-from app.services.llm_service import DraftResult, EstimationError
+from app.services.llm_service import CallUsage, DraftResult, EstimationError
 from app.services.planning import build_plan
 from app.services.pricing import price_project
 from evals import consistency
@@ -20,6 +20,7 @@ from evals.consistency import (
 )
 
 DRAFTS = [example.draft for example in ESTIMATION_EXAMPLES]
+CALL = CallUsage("claude-haiku-5-5", 1_656, 0, 20_639, 9_000, 60_000)
 
 
 class FakeGenerator:
@@ -40,7 +41,7 @@ class FakeGenerator:
         if number == self.fail_on:
             raise self.error
         draft = DRAFTS[(number - 1) % len(DRAFTS)]
-        return DraftResult(draft, "claude-haiku-5-5", "anthropic", 1_656, 0, 20_639, 9_000, 60_000)
+        return DraftResult(draft, "anthropic", (CALL,))
 
 
 def run_into(folder, runs=4, generator=None):
@@ -95,7 +96,7 @@ def test_summary_and_report(tmp_path):
     assert summary.spread("base_hours").values == tuple(expected)
     assert [failure["run"] for failure in summary.failures] == [3]
     assert summary.attempts == 4
-    assert summary.total_cost_usd == pytest.approx(3 * DraftResult(DRAFTS[0], "claude-haiku-5-5", "anthropic", 1_656, 0, 20_639, 9_000, 1).estimated_cost_usd, abs=1e-4)
+    assert summary.total_cost_usd == pytest.approx(3 * CALL.estimated_cost_usd, abs=1e-4)
 
     report = render_report(summary)
     assert "Llamadas válidas: 3 de 4" in report
@@ -130,22 +131,23 @@ def test_comparison(tmp_path):
 
 def test_run_command(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(consistency, "RESULTS_DIR", tmp_path / "resultados")
-    monkeypatch.setattr(consistency, "generate_draft", FakeGenerator())
+    monkeypatch.setitem(consistency.PIPELINES, "directo", (FakeGenerator(), lambda: ["prompt"]))
     transcription = tmp_path / "reunion.txt"
     transcription.write_text("Transcripción de prueba con suficiente texto.", encoding="utf-8")
 
-    assert consistency.main(["run", str(transcription), "--runs", "3", "--label", "Línea base"]) == 0
+    args = ["run", str(transcription), "--runs", "3", "--label", "Línea base", "--pipeline", "directo"]
+    assert consistency.main(args) == 0
 
     (folder,) = (tmp_path / "resultados").iterdir()
     assert folder.name.endswith("_linea-base")
     config = json.loads((folder / "config.json").read_text(encoding="utf-8"))
-    assert config["label"] == "Línea base" and config["runs"] == 3
+    assert config["label"] == "Línea base" and config["runs"] == 3 and config["pipeline"] == "directo"
     assert "Transcripción de prueba" not in json.dumps(config)  # solo la huella, nunca el texto
     assert len(config["transcription_fingerprint"]) == 12
     summary = json.loads((folder / "resumen.json").read_text(encoding="utf-8"))
     assert summary["validas"] == 3
     assert (folder / "informe.md").read_text(encoding="utf-8").startswith("# Consistencia: Línea base")
-    assert "3 llamadas reales" in capsys.readouterr().out
+    assert "3 estimaciones reales" in capsys.readouterr().out
 
 
 def test_run_command_needs_two_calls(tmp_path, capsys):
@@ -160,3 +162,25 @@ def test_report_command_recalculates_without_calling_the_model(tmp_path, capsys)
     assert consistency.main(["report", str(tmp_path)]) == 0
     assert (tmp_path / "informe.md").exists() and (tmp_path / "resumen.json").exists()
     assert "# Consistencia:" in capsys.readouterr().out
+
+
+def test_the_deadline_comes_from_the_saved_inventory(tmp_path):
+    from .test_inventory import SAMPLE
+
+    class WithInventory(FakeGenerator):
+        async def __call__(self, transcription, scope_changes):
+            result = await super().__call__(transcription, scope_changes)
+            return DraftResult(result.draft, "anthropic", (CALL,), inventory=SAMPLE)
+
+    run_into(tmp_path, runs=2, generator=WithInventory())
+    summary = load_summary(tmp_path)
+    assert [m.requested_weeks for m in summary.metrics] == [17, 17]
+    assert [m.weeks for m in summary.metrics] == [17, 17]  # 16 y 18 semanas propuestas
+    assert "| 17 (16) | 17 |" in render_report(summary)
+
+    # Un resultado anterior al plazo se vuelve a medir sin plazo
+    path = tmp_path / "llamada_01.json"
+    record = json.loads(path.read_text(encoding="utf-8"))
+    del record["inventory"]["deadline"]
+    path.write_text(json.dumps(record), encoding="utf-8")
+    assert load_summary(tmp_path).metrics[0].requested_weeks is None

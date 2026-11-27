@@ -32,6 +32,7 @@ from app.schemas.estimation import (
     EstimateSummary,
     TokenUsage,
 )
+from app.services.catalog_hours import REVIEW
 from app.services.estimation_service import EstimationResult, estimate
 from app.services.llm_service import EstimationError
 from app.services.planning import InvalidDraftError, NotASoftwareProjectError
@@ -52,6 +53,7 @@ def get_estimator() -> Estimator:
 def _to_response(result: EstimationResult) -> EstimateResponse:
     pricing, llm = result.pricing, result.llm
     statement = pricing.statement
+    review = [line for line in result.hours.lines if line.kind == REVIEW] if result.hours else []
     return EstimateResponse(
         estimation=result.internal_report,
         client_proposal=result.client_proposal,
@@ -61,6 +63,7 @@ def _to_response(result: EstimationResult) -> EstimateResponse:
             project_name=llm.draft.project_name,
             project_type=llm.draft.project_type,
             duration_weeks=pricing.plan.duration_weeks,
+            requested_weeks=pricing.plan.deadline_weeks,
             phases=len(pricing.plan.phases),
             base_hours=pricing.base_hours,
             total_hours=round(pricing.total_hours, 1),
@@ -73,6 +76,8 @@ def _to_response(result: EstimationResult) -> EstimateResponse:
             schedule_adjustments=list(pricing.plan.adjustments),
             open_scope_questions=list(llm.draft.open_scope_questions),
             warnings=[check.text for check in pricing.checks if check.status == WARNING],
+            review_hours=result.hours.hours_of(REVIEW) if result.hours else None,
+            review_items=[f"{line.name}: {line.total} h" for line in review],
         ),
         usage=TokenUsage(
             input_tokens=llm.input_tokens,
@@ -111,10 +116,11 @@ REJECTED_KEY = (anthropic.AuthenticationError, anthropic.PermissionDeniedError)
     response_model=EstimateResponse,
     summary="Estima un proyecto a partir de la transcripción de una reunión",
     description=(
-        "Envía la transcripción al LLM junto con las estimaciones de referencia (CAG). "
-        "El modelo devuelve un borrador estructurado y Python calcula el cronograma, los "
-        "costos, el precio y los márgenes, y escribe el informe interno y la propuesta para "
-        "el cliente."
+        "Dos llamadas al LLM. En la primera, el modelo hace el inventario de alcance con el "
+        "catálogo de componentes y Python calcula las horas. En la segunda, con las estimaciones "
+        "de referencia (CAG), el modelo reparte esas horas en etapas y redacta la propuesta. "
+        "Python calcula el cronograma, los costos, el precio y los márgenes, y escribe el informe "
+        "interno y la propuesta para el cliente."
     ),
     responses=RESPONSES,
 )

@@ -12,8 +12,12 @@ from app.main import app
 from app.routers.estimations import get_estimator
 from app.schemas.estimation import EXAMPLE_TRANSCRIPTION
 from app.services.estimation_service import estimate_from_draft
-from app.services.llm_service import DraftResult, EstimationError
+from app.services.llm_service import CallUsage, DraftResult, EstimationError
 from app.services.planning import InvalidDraftError, NotASoftwareProjectError
+
+from .conftest import model_response
+from .test_inventory import SAMPLE
+from .test_plan import PLAN
 
 URL = "/api/v1/estimate"
 BODY = {"transcription": EXAMPLE_TRANSCRIPTION}
@@ -54,7 +58,7 @@ def test_swagger_and_routes(client):
 def test_estimate_returns_both_reports(client):
     draft = ESTIMATION_EXAMPLES[1].draft
     tokens = (1_656, 20_515, 0, 9_759)
-    draft_result = DraftResult(draft, "claude-haiku-5-5", "anthropic", *tokens, 44_466)
+    draft_result = DraftResult(draft, "anthropic", (CallUsage("claude-haiku-5-5", *tokens, 44_466),))
 
     async def estimator(transcription, scope_changes=None):
         return estimate_from_draft(draft_result)
@@ -69,13 +73,28 @@ def test_estimate_returns_both_reports(client):
     assert data["summary"]["total_price_usd"] == 265_951
     assert len(data["summary"]["open_scope_questions"]) == 1
     assert data["estimated_cost_usd"] == pytest.approx(0.0076095, abs=1e-6)
+    assert data["summary"]["review_hours"] is None  # sin inventario no hay horas del catálogo
 
 
 def test_real_estimator_with_fake_anthropic(client, fake_anthropic):
-    fake_anthropic()
+    """El estimador del servicio: el inventario y el plan, con un cliente de Anthropic simulado."""
+    messages = fake_anthropic(
+        model_response(text=SAMPLE.model_dump_json()), model_response(text=PLAN.model_dump_json())
+    )
     response = client.post(URL, json=BODY)
     assert response.status_code == 200, response.text
-    assert response.json()["summary"]["total_price_usd"] == 265_951
+    assert len(messages.calls) == 2
+    data = response.json()
+    summary = data["summary"]
+    assert summary["base_hours"] == 768  # las horas del catálogo, no las del modelo
+    assert summary["review_hours"] == 30
+    assert summary["requested_weeks"] == summary["duration_weeks"] == 17  # «en unos cuatro meses»
+    assert summary["review_items"] == ["Encuestas a empleados (S): Requisito de encuestas: 30 h"]
+    assert summary["open_scope_questions"] == [
+        "Requisito de lecciones_y_cuestionarios: se mencionó como deseable, sin decidirlo."
+    ]
+    assert data["usage"]["output_tokens"] == 2 * 9_000  # la suma de las dos llamadas
+    assert "De dónde salen las horas" in data["estimation"]
 
 
 @pytest.mark.parametrize(
@@ -120,6 +139,14 @@ def test_errors_map_to_http_codes(client, error, code):
     assert response.json()["detail"] and "sk-" not in response.text
 
 
+def test_a_response_that_stops_arriving_twice_is_504(client, fake_anthropic):
+    messages = fake_anthropic(httpx2.ReadTimeout("", request=REQUEST))
+    response = client.post(URL, json=BODY)
+    assert response.status_code == 504
+    assert len(messages.calls) == 2  # el inventario, con su reintento; el plan ya no se pide
+    assert response.json()["detail"] == "El proveedor del LLM tardó demasiado en responder"
+
+
 def test_server_does_not_start_without_the_provider_key(monkeypatch):
     monkeypatch.setenv("LLM_PROVIDER", "openai")
     get_settings.cache_clear()
@@ -139,7 +166,7 @@ def test_scope_changes_reach_the_estimator(client, scope_changes, expected):
 
     async def estimator(transcription, scope_changes=None):
         received["scope_changes"] = scope_changes
-        llm = DraftResult(draft, "claude-haiku-5-5", "anthropic", 1, 0, 0, 1, 1, scope_changes)
+        llm = DraftResult(draft, "anthropic", (CallUsage("claude-haiku-5-5", 1, 0, 0, 1, 1),), scope_changes)
         return estimate_from_draft(llm)
 
     use_estimator(estimator)

@@ -1,0 +1,13 @@
+{
+  "label": "inventario-v2-horas-obligatorias",
+  "kind": "inventario",
+  "transcription": "transcripciones/onboarding_seguridad_canteras.txt",
+  "transcription_fingerprint": "402c1ff99f4f",
+  "scope_changes_fingerprint": null,
+  "model": "claude-haiku-5-5",
+  "provider": "anthropic",
+  "system_prompt_fingerprint": "927c8c24c2b3",
+  "git_commit": "96aef76 con cambios sin commit en app/",
+  "runs": 10,
+  "started_at": "2026-11-24T21:25:50"
+}

@@ -1,0 +1,693 @@
+{
+  "run": 3,
+  "ok": true,
+  "model": "claude-haiku-5-5",
+  "provider": "anthropic",
+  "input_tokens": 5158,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 25795,
+  "output_tokens": 20011,
+  "latency_ms": 82356,
+  "estimated_cost_usd": 0.01078,
+  "draft": {
+    "is_software_project": true,
+    "not_software_reason": "",
+    "project_name": "Plataforma de incorporación y formación MSHA para canteras",
+    "project_type": "Plataforma web instalable en tablet, con uso sin conexión, para incorporación, formación MSHA y asistente de seguridad",
+    "project_summary": "Plataforma web instalable en tablet que guía la incorporación de personal nuevo con los módulos de la Parte 46 de MSHA en inglés y español, registra la formación por tarea con firma del supervisor y genera el certificado 5000-23. Incluye un panel de cumplimiento por cantera, un asistente con IA que responde solo con los manuales propios citando la fuente y deriva al supervisor, y encuestas a 30, 60 y 90 días cruzadas con la rotación. El alcance inicial es un piloto en dos canteras, y el riesgo principal es la calidad de las respuestas del asistente y de los registros que se muestran en una inspección.",
+    "value_proposition": {
+      "client_profile": "Productor de áridos del Valle Central de California, con unas 350 personas en nueve canteras y tres plantas de trituración y lavado, y una contratación estacional de unas 120 personas al año.",
+      "current_situation": "Cada año se contratan unas 120 personas, sobre todo entre marzo y junio. Casi un tercio de las nuevas incorporaciones del último año se fue antes de los tres meses, y en las entrevistas de salida la primera semana se describe como caótica. La formación MSHA se gestiona con carpetas de papel y presentaciones en sala, y los certificados se firman a mano y se escanean con retraso. En la última inspección se encontraron registros incompletos en dos canteras. Los supervisores dedican buena parte de la mañana a comprobar si una persona tiene la formación necesaria antes de que opere un equipo. Buena parte de la plantilla de cantera prefiere el español, y la cobertura en varias canteras es muy limitada.",
+      "objectives": [
+        "Dar a cada persona nueva una incorporación ordenada, desde la primera semana.",
+        "Registrar la formación MSHA de cada persona y de cada tarea, con firmas y certificados disponibles para una inspección.",
+        "Responder las dudas de seguridad de los nuevos con los manuales de la empresa, sin improvisar.",
+        "Medir si las personas se quedan a los 30, 60 y 90 días y entender la rotación por cantera y por supervisor."
+      ],
+      "solution": "Una plataforma web instalable en tablet, que funciona sin conexión en las canteras y sincroniza los registros al recuperarla. La persona nueva completa los módulos de la Parte 46 en inglés o en español, con videos cortos y cuestionarios. El supervisor marca en la tablet la formación de cada tarea y firma allí mismo, y el certificado 5000-23 se genera y se guarda. Un panel por cantera muestra quién está al día, quién tiene formación pendiente y qué vence cada mes, y avisa antes de que venza el reciclaje anual. Un asistente responde con los manuales de seguridad y procedimientos de la empresa, cita la fuente y deriva al supervisor cuando no hay respuesta en los manuales.",
+      "benefits": [
+        "Una primera semana con una ruta clara de formación y de dudas, en el idioma de cada persona.",
+        "Registros completos y certificados generados al momento, listos para una inspección.",
+        "Menos tiempo de los supervisores buscando formación, y avisos antes de que venza el reciclaje anual.",
+        "Respuestas de seguridad con la fuente citada, o derivadas al supervisor cuando el manual no responde.",
+        "Datos a 30, 60 y 90 días para saber dónde se pierden las personas nuevas."
+      ],
+      "out_of_scope": [
+        "La formación de riesgos del lugar para los contratistas que entran a las canteras, que se propone para una fase posterior.",
+        "El despliegue en las nueve canteras y en las plantas, más allá del piloto en dos canteras.",
+        "La traducción de los manuales de seguridad al español, que se usan en el idioma en que están.",
+        "La escritura de datos de altas o de nómina en el sistema de recursos humanos.",
+        "El soporte y el mantenimiento después de la puesta en marcha, que se presupuestan aparte.",
+        "El consumo de la API de modelos de lenguaje y de la nube en producción."
+      ],
+      "assumptions": [
+        "El sistema de recursos humanos existente expone una API sencilla y la plataforma solo lee datos de empleados y fechas de alta y baja. Si no la tiene, se revisan el alcance y la inversión.",
+        "El alcance inicial es el piloto en dos canteras. Extender el uso a todas las canteras desde el inicio cambia el calendario y el presupuesto.",
+        "La empresa aporta sus contenidos de formación MSHA y los aprueba antes de publicarlos. La plataforma registra la formación, pero la responsabilidad del cumplimiento sigue siendo de la empresa.",
+        "El asistente responde solo con los manuales que entregue la empresa, con la fuente citada. No sustituye al supervisor ni asesora legalmente, y las respuestas sobre seguridad se verifican con el manual original.",
+        "La firma electrónica del supervisor y el certificado 5000-23 generado en la plataforma deben validarse con la práctica de inspección de MSHA de la empresa.",
+        "Los datos de las personas empleadas están protegidos por la CCPA/CPRA, que en California también cubre a los trabajadores. Los resultados de las encuestas se muestran agregados por cantera.",
+        "Los 40 documentos de seguridad y procedimientos están en formato digital y se entregan al inicio del proyecto.",
+        "La conexión sin cobertura se usa en las canteras del piloto, con sincronización al recuperar la señal."
+      ]
+    },
+    "phases": [
+      {
+        "name": "Descubrimiento y diseño",
+        "weeks": 3,
+        "deliverables": [
+          "Mapa del flujo de incorporación y de los módulos de la Parte 46 en inglés y español",
+          "Inventario de los manuales de seguridad y procedimientos que alimentarán al asistente",
+          "Diseño de la interfaz para tablet, con la firma del supervisor y el panel de cumplimiento"
+        ]
+      },
+      {
+        "name": "Construcción",
+        "weeks": 7,
+        "deliverables": [
+          "Módulos de la Parte 46 con videos, cuestionarios y registro de formación por tarea, también sin conexión",
+          "Firma del supervisor en la tablet y certificado 5000-23 generado y guardado",
+          "Panel por cantera con formación al día, pendiente y próximos vencimientos, y avisos de reciclaje",
+          "Asistente con respuestas citadas de los manuales, que deriva al supervisor cuando no hay respuesta",
+          "Encuestas a 30, 60 y 90 días y cruce con la rotación por cantera y por supervisor"
+        ]
+      },
+      {
+        "name": "Puesta en marcha en dos canteras",
+        "weeks": 3,
+        "deliverables": [
+          "Plataforma en uso en las dos canteras del alcance inicial, con el asistente y el panel",
+          "Primeros resultados de las encuestas de seguimiento y de la rotación por supervisor",
+          "Ajustes a partir de lo aprendido en las dos canteras"
+        ]
+      }
+    ],
+    "tasks": [
+      {
+        "name": "Descubrimiento",
+        "first_phase": 1,
+        "last_phase": 1,
+        "hours": [
+          {
+            "role": "Consultoría de RR. HH.",
+            "hours": 40
+          },
+          {
+            "role": "Diseño UX/UI",
+            "hours": 40
+          },
+          {
+            "role": "Liderazgo técnico",
+            "hours": 40
+          }
+        ]
+      },
+      {
+        "name": "Configuración, arquitectura y lanzamiento",
+        "first_phase": 1,
+        "last_phase": 2,
+        "hours": [
+          {
+            "role": "Liderazgo técnico",
+            "hours": 31
+          },
+          {
+            "role": "Backend",
+            "hours": 49
+          },
+          {
+            "role": "Frontend",
+            "hours": 41
+          },
+          {
+            "role": "DevOps",
+            "hours": 19
+          }
+        ]
+      },
+      {
+        "name": "Diseño de la interfaz",
+        "first_phase": 1,
+        "last_phase": 2,
+        "hours": [
+          {
+            "role": "Diseño UX/UI",
+            "hours": 90
+          }
+        ]
+      },
+      {
+        "name": "Lecciones, cuestionarios y progreso (M): Módulos de la Parte 46 de MSHA (24 h, 8 h antes de empezar, formación por tarea y reciclaje anual de 8 h) con videos cortos, cuestionarios y seguimiento por persona, incluido el registro de la formación por tarea que marca el supervisor",
+        "first_phase": 2,
+        "last_phase": 3,
+        "hours": [
+          {
+            "role": "Diseño UX/UI",
+            "hours": 38
+          },
+          {
+            "role": "Backend",
+            "hours": 84
+          },
+          {
+            "role": "Frontend",
+            "hours": 70
+          }
+        ]
+      },
+      {
+        "name": "Cuentas de usuario y roles (M): Acceso diferenciado para la persona nueva, el supervisor y el gerente de EHS",
+        "first_phase": 2,
+        "last_phase": 2,
+        "hours": [
+          {
+            "role": "Diseño UX/UI",
+            "hours": 16
+          },
+          {
+            "role": "Backend",
+            "hours": 35
+          },
+          {
+            "role": "Frontend",
+            "hours": 29
+          }
+        ]
+      },
+      {
+        "name": "Varios idiomas (S): Contenidos y aplicación en inglés y español, porque el 40 % de la plantilla de cantera prefiere el español",
+        "first_phase": 2,
+        "last_phase": 2,
+        "hours": [
+          {
+            "role": "Diseño UX/UI",
+            "hours": 5
+          },
+          {
+            "role": "Backend",
+            "hours": 10
+          },
+          {
+            "role": "Frontend",
+            "hours": 9
+          }
+        ]
+      },
+      {
+        "name": "Modo sin conexión y sincronización (S): Uso de la aplicación sin cobertura en las canteras, con sincronización de los registros al recuperarla",
+        "first_phase": 2,
+        "last_phase": 2,
+        "hours": [
+          {
+            "role": "Diseño UX/UI",
+            "hours": 11
+          },
+          {
+            "role": "Backend",
+            "hours": 25
+          },
+          {
+            "role": "Frontend",
+            "hours": 20
+          }
+        ]
+      },
+      {
+        "name": "Documentos generados y firmas en pantalla (M): Firma del supervisor en la tablet y generación automática del certificado 5000-23, guardado para inspecciones",
+        "first_phase": 2,
+        "last_phase": 3,
+        "hours": [
+          {
+            "role": "Backend",
+            "hours": 24
+          },
+          {
+            "role": "Frontend",
+            "hours": 16
+          },
+          {
+            "role": "Diseño UX/UI",
+            "hours": 6
+          },
+          {
+            "role": "QA",
+            "hours": 6
+          },
+          {
+            "role": "Gestión de proyecto",
+            "hours": 2
+          }
+        ]
+      },
+      {
+        "name": "Notificaciones y recordatorios (S): Aviso a cada persona antes de que venza su reciclaje anual",
+        "first_phase": 2,
+        "last_phase": 2,
+        "hours": [
+          {
+            "role": "Diseño UX/UI",
+            "hours": 5
+          },
+          {
+            "role": "Backend",
+            "hours": 10
+          },
+          {
+            "role": "Frontend",
+            "hours": 9
+          }
+        ]
+      },
+      {
+        "name": "Paneles y reportes (M): Panel por cantera con quién está al día, quién tiene formación pendiente y qué vence este mes",
+        "first_phase": 2,
+        "last_phase": 3,
+        "hours": [
+          {
+            "role": "Diseño UX/UI",
+            "hours": 19
+          },
+          {
+            "role": "Backend",
+            "hours": 42
+          },
+          {
+            "role": "Frontend",
+            "hours": 35
+          }
+        ]
+      },
+      {
+        "name": "Asistente con IA sobre documentos propios (RAG) (M): Asistente en la tablet que responde con los unos 40 manuales de seguridad y procedimientos, cita la fuente y deriva al supervisor cuando no hay respuesta en los manuales",
+        "first_phase": 1,
+        "last_phase": 3,
+        "hours": [
+          {
+            "role": "Consultoría de RR. HH.",
+            "hours": 46
+          },
+          {
+            "role": "Ingeniería de datos",
+            "hours": 92
+          },
+          {
+            "role": "IA / ML",
+            "hours": 111
+          },
+          {
+            "role": "QA",
+            "hours": 65
+          },
+          {
+            "role": "Backend",
+            "hours": 25
+          },
+          {
+            "role": "Frontend",
+            "hours": 21
+          }
+        ]
+      },
+      {
+        "name": "Encuestas a empleados (S): Encuesta corta a los 30, 60 y 90 días de la incorporación, con resultados agregados",
+        "first_phase": 2,
+        "last_phase": 3,
+        "hours": [
+          {
+            "role": "Backend",
+            "hours": 6
+          },
+          {
+            "role": "Frontend",
+            "hours": 5
+          },
+          {
+            "role": "Diseño UX/UI",
+            "hours": 3
+          },
+          {
+            "role": "Ciencia de datos",
+            "hours": 3
+          },
+          {
+            "role": "QA",
+            "hours": 2
+          }
+        ]
+      },
+      {
+        "name": "Analítica de personas con historial (M): Cruce de los resultados de la encuesta con la rotación por cantera y por supervisor",
+        "first_phase": 3,
+        "last_phase": 3,
+        "hours": [
+          {
+            "role": "Ingeniería de datos",
+            "hours": 24
+          },
+          {
+            "role": "Ciencia de datos",
+            "hours": 16
+          },
+          {
+            "role": "Backend",
+            "hours": 8
+          },
+          {
+            "role": "Frontend",
+            "hours": 8
+          },
+          {
+            "role": "QA",
+            "hours": 4
+          }
+        ]
+      },
+      {
+        "name": "Gestión, liderazgo técnico, QA y lanzamiento",
+        "first_phase": 1,
+        "last_phase": 3,
+        "hours": [
+          {
+            "role": "Gestión de proyecto",
+            "hours": 107
+          },
+          {
+            "role": "Liderazgo técnico",
+            "hours": 137
+          },
+          {
+            "role": "QA",
+            "hours": 113
+          },
+          {
+            "role": "DevOps",
+            "hours": 61
+          }
+        ]
+      }
+    ],
+    "expenses": [
+      {
+        "description": "Viajes a las dos canteras del piloto y a una visita de descubrimiento: 4 viajes de 120 millas a la tarifa del IRS",
+        "quantity": 480.0,
+        "unit": "millas",
+        "unit_cost_usd": 0.725
+      },
+      {
+        "description": "API de modelos de lenguaje y embeddings durante el desarrollo y la evaluación del asistente",
+        "quantity": 1.0,
+        "unit": "global",
+        "unit_cost_usd": 400.0
+      },
+      {
+        "description": "Entornos de desarrollo y pruebas en la nube",
+        "quantity": 3.0,
+        "unit": "meses",
+        "unit_cost_usd": 400.0
+      }
+    ],
+    "open_scope_questions": [
+      "Lectura de empleados y fechas de alta y baja desde el HRIS existente para calcular la rotación: depende de algo que la reunión no decidió.",
+      "Piloto en dos canteras con formación de usuarios y preparación del despliegue: depende de algo que la reunión no decidió.",
+      "Formación de riesgos del lugar para los contratistas que entran a las canteras: se mencionó como deseable, sin decidirlo."
+    ],
+    "internal_risks": [
+      "El asistente (partida 11, 360 h) es la partida de mayor riesgo: los 40 documentos pueden tener versiones contradictorias o estar desactualizados. Si la evaluación con la empresa no llega a una calidad aceptable, hay que dedicar más horas de IA/ML y de ingeniería de datos y el precio cerrado no lo cubre.",
+      "Una respuesta de seguridad incorrecta tiene consecuencias legales y de accidentes. Hay que acordar por escrito el alcance del asistente, la citación de fuentes y la derivación al supervisor, y dejarlo fuera de cualquier garantía de exactitud.",
+      "Si la empresa pide el certificado 5000-23 y la firma electrónica como sustitutos del papel, hay que confirmarlo con su asesoría de cumplimiento MSHA antes del piloto.",
+      "La plataforma se usará en inspecciones: el panel y los registros deben tener trazabilidad, y eso aumenta las pruebas de QA y de accesibilidad.",
+      "El acceso al sistema de recursos humanos depende de que el cliente lo facilite a tiempo. Si solo exporta ficheros, hacen falta horas de backend adicionales.",
+      "Si el cliente decide extender el piloto a todas las canteras desde el inicio, el calendario y el coste de la infraestructura cambian.",
+      "Los contenidos de formación pueden llegar tarde o sin aprobar, y la partida 4 depende de ellos. Hay que fijar en el descubrimiento quién los entrega y en qué plazo.",
+      "La formación de contratistas se dejó para una fase posterior, pero el cliente la tiene en mente; hay que cerrar esa frontera por escrito para no absorber alcance.",
+      "Existen plataformas SaaS de formación MSHA y de incorporación. El desarrollo se justifica por el asistente sobre los manuales propios y la integración sin conexión; conviene compararlo en el descubrimiento."
+    ]
+  },
+  "calls": [
+    {
+      "model": "claude-haiku-5-5",
+      "input_tokens": 1656,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7305,
+      "output_tokens": 8730,
+      "latency_ms": 34040,
+      "estimated_cost_usd": 0.004604
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "input_tokens": 3502,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 18490,
+      "output_tokens": 11281,
+      "latency_ms": 48316,
+      "estimated_cost_usd": 0.006176
+    }
+  ],
+  "inventory": {
+    "is_software_project": true,
+    "not_software_reason": "",
+    "product_types": [
+      "incorporacion",
+      "formacion",
+      "seguridad_salud",
+      "asistente_rrhh",
+      "encuestas",
+      "analitica_personas"
+    ],
+    "platform": "web",
+    "platform_reason": "La reunión pide una app para tablet que funcione sin conexión y no pide funciones de hardware del dispositivo, así que una web instalable cubre el requisito.",
+    "requirements": [
+      {
+        "description": "Módulos de la Parte 46 de MSHA (24 h, 8 h antes de empezar, formación por tarea y reciclaje anual de 8 h) con videos cortos, cuestionarios y seguimiento por persona, incluido el registro de la formación por tarea que marca el supervisor",
+        "status": "acordado",
+        "evidence": "La persona nueva hace los módulos de la Parte 46 en inglés o en español, con videos cortos y cuestionarios",
+        "component": "lecciones_y_cuestionarios",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Varios módulos con cuestionarios, seguimiento por persona y por tarea y reciclaje anual: más de un flujo, sin llegar a producto completo",
+        "custom_hours": []
+      },
+      {
+        "description": "Acceso diferenciado para la persona nueva, el supervisor y el gerente de EHS",
+        "status": "acordado",
+        "evidence": "Un panel para mí, por cantera",
+        "component": "cuentas_y_roles",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Tres tipos de usuario con permisos distintos",
+        "custom_hours": []
+      },
+      {
+        "description": "Contenidos y aplicación en inglés y español, porque el 40 % de la plantilla de cantera prefiere el español",
+        "status": "acordado",
+        "evidence": "un 40 % de la plantilla de cantera prefiere el español",
+        "component": "varios_idiomas",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Dos idiomas para la misma aplicación",
+        "custom_hours": []
+      },
+      {
+        "description": "Uso de la aplicación sin cobertura en las canteras, con sincronización de los registros al recuperarla",
+        "status": "acordado",
+        "evidence": "la cobertura es muy mala en varias, así que lo que hagamos tiene que funcionar sin conexión",
+        "component": "modo_sin_conexion",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Requisito explícito; primera versión con sincronización básica de registros de formación",
+        "custom_hours": []
+      },
+      {
+        "description": "Firma del supervisor en la tablet y generación automática del certificado 5000-23, guardado para inspecciones",
+        "status": "acordado",
+        "evidence": "firma ahí mismo. El certificado 5000-23 se genera solo y queda guardado",
+        "component": "documentos_y_firmas",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Generar el formulario en PDF y firmarlo en pantalla con registro guardado",
+        "custom_hours": [
+          {
+            "role": "Backend",
+            "hours": 24
+          },
+          {
+            "role": "Frontend",
+            "hours": 16
+          },
+          {
+            "role": "Diseño UX/UI",
+            "hours": 6
+          },
+          {
+            "role": "QA",
+            "hours": 6
+          },
+          {
+            "role": "Gestión de proyecto",
+            "hours": 2
+          }
+        ]
+      },
+      {
+        "description": "Aviso a cada persona antes de que venza su reciclaje anual",
+        "status": "acordado",
+        "evidence": "Que avise antes de que venza el reciclaje anual de cada persona",
+        "component": "notificaciones",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Un tipo de recordatorio programado",
+        "custom_hours": []
+      },
+      {
+        "description": "Panel por cantera con quién está al día, quién tiene formación pendiente y qué vence este mes",
+        "status": "acordado",
+        "evidence": "quién está al día, quién tiene formación pendiente y qué vence este mes",
+        "component": "paneles_y_reportes",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Filtros por cantera e indicadores de vencimiento para mostrar en inspección",
+        "custom_hours": []
+      },
+      {
+        "description": "Asistente en la tablet que responde con los unos 40 manuales de seguridad y procedimientos, cita la fuente y deriva al supervisor cuando no hay respuesta en los manuales",
+        "status": "acordado",
+        "evidence": "un asistente en la tablet que responda con nuestros manuales de seguridad y procedimientos. Son unos 40 documentos",
+        "component": "asistente_sobre_documentos",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Corpus de unos 40 documentos con cita obligatoria, derivación y conjunto de preguntas de evaluación",
+        "custom_hours": []
+      },
+      {
+        "description": "Encuesta corta a los 30, 60 y 90 días de la incorporación, con resultados agregados",
+        "status": "acordado",
+        "evidence": "un seguimiento a los 30, 60 y 90 días con una encuesta corta",
+        "component": "encuestas",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Una encuesta corta con tres envíos programados",
+        "custom_hours": [
+          {
+            "role": "Backend",
+            "hours": 6
+          },
+          {
+            "role": "Frontend",
+            "hours": 5
+          },
+          {
+            "role": "Diseño UX/UI",
+            "hours": 3
+          },
+          {
+            "role": "Ciencia de datos",
+            "hours": 3
+          },
+          {
+            "role": "QA",
+            "hours": 2
+          }
+        ]
+      },
+      {
+        "description": "Cruce de los resultados de la encuesta con la rotación por cantera y por supervisor",
+        "status": "acordado",
+        "evidence": "cruzarlo con la rotación por cantera y por supervisor",
+        "component": "analitica_de_personas",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Historial de altas y bajas por cantera y supervisor, cruzado con las encuestas",
+        "custom_hours": [
+          {
+            "role": "Ingeniería de datos",
+            "hours": 24
+          },
+          {
+            "role": "Ciencia de datos",
+            "hours": 16
+          },
+          {
+            "role": "Backend",
+            "hours": 8
+          },
+          {
+            "role": "Frontend",
+            "hours": 8
+          },
+          {
+            "role": "QA",
+            "hours": 4
+          }
+        ]
+      },
+      {
+        "description": "Lectura de empleados y fechas de alta y baja desde el HRIS existente para calcular la rotación",
+        "status": "condicionado",
+        "evidence": "El HRIS, que tiene API",
+        "component": "integracion_hris",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "API existente; el sistema no está nombrado, así que se asume lectura sencilla de empleados",
+        "custom_hours": []
+      },
+      {
+        "description": "Piloto en dos canteras con formación de usuarios y preparación del despliegue",
+        "status": "condicionado",
+        "evidence": "Podríamos empezar con un piloto en dos canteras",
+        "component": "formacion_y_cambio",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Piloto acotado a dos canteras",
+        "custom_hours": [
+          {
+            "role": "Consultoría de RR. HH.",
+            "hours": 24
+          },
+          {
+            "role": "Gestión de proyecto",
+            "hours": 8
+          }
+        ]
+      },
+      {
+        "description": "Formación de riesgos del lugar para los contratistas que entran a las canteras",
+        "status": "opcional",
+        "evidence": "los contratistas que entran a las canteras necesitan la formación de riesgos del lugar. Si se puede incluir, mejor",
+        "component": "lecciones_y_cuestionarios",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Un curso corto de riesgos del lugar, distinto de la formación MSHA",
+        "custom_hours": []
+      }
+    ],
+    "open_decisions": [
+      {
+        "question": "¿Qué sistema HRIS usan y qué datos hay que leer?",
+        "options": [
+          "HRIS existente con API sencilla, solo lectura de empleados",
+          "Lectura y escritura de altas y nómina"
+        ],
+        "assumed": "HRIS existente con API sencilla, solo lectura de empleados",
+        "evidence": "El HRIS, que tiene API"
+      },
+      {
+        "question": "¿El alcance inicial es el piloto en dos canteras o todas las canteras desde el inicio?",
+        "options": [
+          "Piloto en dos canteras",
+          "Todas las canteras desde el inicio"
+        ],
+        "assumed": "Piloto en dos canteras",
+        "evidence": "Podríamos empezar con un piloto en dos canteras"
+      },
+      {
+        "question": "¿Se incluye la formación de contratistas en esta entrega?",
+        "options": [
+          "Sí, en esta entrega",
+          "No, en una fase posterior"
+        ],
+        "assumed": "No, en una fase posterior",
+        "evidence": "Si se puede incluir, mejor, pero no es lo principal"
+      }
+    ]
+  }
+}

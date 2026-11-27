@@ -1,0 +1,161 @@
+{
+  "etiqueta": "inventario-v2-horas-obligatorias",
+  "config": {
+    "label": "inventario-v2-horas-obligatorias",
+    "kind": "inventario",
+    "transcription": "transcripciones/onboarding_seguridad_canteras.txt",
+    "transcription_fingerprint": "402c1ff99f4f",
+    "scope_changes_fingerprint": null,
+    "model": "claude-haiku-5-5",
+    "provider": "anthropic",
+    "system_prompt_fingerprint": "927c8c24c2b3",
+    "git_commit": "96aef76 con cambios sin commit en app/",
+    "runs": 10,
+    "started_at": "2026-11-24T21:25:50"
+  },
+  "llamadas": 10,
+  "validas": 10,
+  "fallidas": [],
+  "cifras": {
+    "Horas base": {
+      "media": 1879.4,
+      "mediana": 1871.0,
+      "minimo": 1775,
+      "maximo": 1987,
+      "desviacion_estandar": 80.43796781785743,
+      "amplitud": 0.11943661971830988,
+      "cv": 0.042799812609267546
+    },
+    "Horas del catálogo": {
+      "media": 894.8,
+      "mediana": 888.0,
+      "minimo": 848,
+      "maximo": 1024,
+      "desviacion_estandar": 52.8662883550987,
+      "amplitud": 0.2075471698113207,
+      "cv": 0.05908168121937719
+    },
+    "Horas a revisar (del modelo)": {
+      "media": 177.5,
+      "mediana": 182.0,
+      "minimo": 107,
+      "maximo": 250,
+      "desviacion_estandar": 49.46884541473216,
+      "amplitud": 1.3364485981308412,
+      "cv": 0.2786977206463784
+    },
+    "Requisitos acordados": {
+      "media": 10.9,
+      "mediana": 11.0,
+      "minimo": 10,
+      "maximo": 12,
+      "desviacion_estandar": 0.8755950357709131,
+      "amplitud": 0.19999999999999996,
+      "cv": 0.08032981979549661
+    },
+    "Requisitos no acordados": {
+      "media": 2.3,
+      "mediana": 2.0,
+      "minimo": 1,
+      "maximo": 3,
+      "desviacion_estandar": 0.6749485577105528,
+      "amplitud": 2.0,
+      "cv": 0.29345589465676214
+    }
+  },
+  "plataformas": {
+    "web": 10
+  },
+  "componentes": {
+    "cuentas_y_roles": {
+      "llamadas": 10,
+      "tamanos": {
+        "S": 5,
+        "M": 5
+      }
+    },
+    "archivos": {
+      "llamadas": 2,
+      "tamanos": {
+        "S": 1,
+        "M": 1
+      }
+    },
+    "notificaciones": {
+      "llamadas": 10,
+      "tamanos": {
+        "S": 10
+      }
+    },
+    "varios_idiomas": {
+      "llamadas": 10,
+      "tamanos": {
+        "S": 10
+      }
+    },
+    "modo_sin_conexion": {
+      "llamadas": 10,
+      "tamanos": {
+        "M": 9,
+        "S": 1
+      }
+    },
+    "lecciones_y_cuestionarios": {
+      "llamadas": 10,
+      "tamanos": {
+        "M": 10
+      }
+    },
+    "integracion_hris": {
+      "llamadas": 3,
+      "tamanos": {
+        "S": 3
+      }
+    },
+    "paneles_y_reportes": {
+      "llamadas": 10,
+      "tamanos": {
+        "M": 10
+      }
+    },
+    "analitica_de_personas": {
+      "llamadas": 10,
+      "tamanos": {
+        "M": 10
+      }
+    },
+    "encuestas": {
+      "llamadas": 10,
+      "tamanos": {
+        "S": 10
+      }
+    },
+    "asistente_sobre_documentos": {
+      "llamadas": 10,
+      "tamanos": {
+        "M": 10
+      }
+    },
+    "documentos_y_firmas": {
+      "llamadas": 10,
+      "tamanos": {
+        "S": 5,
+        "M": 6
+      }
+    },
+    "formacion_y_cambio": {
+      "llamadas": 1,
+      "tamanos": {
+        "M": 1
+      }
+    },
+    "a_medida": {
+      "llamadas": 2,
+      "tamanos": {
+        "M": 1,
+        "S": 1
+      }
+    }
+  },
+  "costo_total_usd": 0.0438
+}

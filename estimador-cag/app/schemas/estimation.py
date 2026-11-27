@@ -6,7 +6,8 @@ la consultora necesita de cada estimación:
 - `client_proposal` es la propuesta para el cliente, en un campo aparte para que el informe
   interno no llegue al cliente por error;
 - `summary` resume las cifras clave, para no tener que leerlas del Markdown;
-- `usage`, `estimated_cost_usd`, `latency_ms` y `created_at` registran lo que costó la llamada.
+- `usage`, `estimated_cost_usd`, `latency_ms` y `created_at` registran lo que costaron las
+  llamadas al modelo.
 """
 
 from datetime import datetime
@@ -50,6 +51,8 @@ class EstimateRequest(BaseModel):
 
 
 class TokenUsage(BaseModel):
+    """Suma de las llamadas al modelo: el inventario, la que completa horas si hizo falta, y el plan."""
+
     input_tokens: int = Field(description="Entrada que no salió de la caché")
     cache_creation_input_tokens: int = Field(description="Entrada escrita en la caché")
     cache_read_input_tokens: int = Field(description="Entrada leída de la caché")
@@ -62,6 +65,10 @@ class EstimateSummary(BaseModel):
     project_name: str
     project_type: str
     duration_weeks: int
+    requested_weeks: int | None = Field(
+        default=None,
+        description="El plazo que pidió el cliente, en semanas; vacío si la reunión no fija ninguno",
+    )
     phases: int
     base_hours: int = Field(description="Horas base, sin imprevistos")
     total_hours: float = Field(description="Horas con el 10 % de imprevistos")
@@ -78,6 +85,15 @@ class EstimateSummary(BaseModel):
         description="Puntos del alcance que la reunión dejó sin decidir: no están estimados"
     )
     warnings: list[str] = Field(description="Alertas del informe interno")
+    review_hours: int | None = Field(
+        description=(
+            "Horas base que puso el modelo porque el catálogo no tiene referencia; null si la "
+            "estimación no partió del inventario de alcance"
+        )
+    )
+    review_items: list[str] = Field(
+        description="Partidas con horas del modelo, que hay que revisar antes de enviar la propuesta"
+    )
 
 
 class EstimateResponse(BaseModel):
@@ -92,9 +108,9 @@ class EstimateResponse(BaseModel):
     summary: EstimateSummary
     usage: TokenUsage
     estimated_cost_usd: float | None = Field(
-        description="Costo estimado de la llamada al modelo; null si no se conoce su precio"
+        description="Costo estimado de las llamadas al modelo; null si no se conoce su precio"
     )
-    latency_ms: int = Field(description="Duración de la llamada al modelo")
+    latency_ms: int = Field(description="Duración de las llamadas al modelo, una detrás de otra")
     created_at: datetime
 
 

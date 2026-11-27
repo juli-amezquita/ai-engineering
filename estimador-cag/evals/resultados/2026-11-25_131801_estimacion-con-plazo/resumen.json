@@ -1,0 +1,188 @@
+{
+  "etiqueta": "estimacion-con-plazo",
+  "config": {
+    "label": "estimacion-con-plazo",
+    "pipeline": "inventario",
+    "transcription": "transcripciones/onboarding_seguridad_canteras.txt",
+    "transcription_fingerprint": "402c1ff99f4f",
+    "scope_changes_fingerprint": null,
+    "model": "claude-haiku-5-5",
+    "provider": "anthropic",
+    "system_prompt_fingerprint": "3b479127cf2c",
+    "git_commit": "96aef76 con cambios sin commit en app/",
+    "runs": 10,
+    "started_at": "2026-11-25T13:18:01"
+  },
+  "llamadas": 10,
+  "validas": 6,
+  "fallidas": [
+    {
+      "run": 3,
+      "error": "ReadTimeout: "
+    },
+    {
+      "run": 4,
+      "error": "ReadTimeout: "
+    },
+    {
+      "run": 6,
+      "error": "ReadTimeout: "
+    },
+    {
+      "run": 7,
+      "error": "ReadTimeout: "
+    }
+  ],
+  "cifras": {
+    "base_hours": {
+      "media": 1796.6666666666667,
+      "mediana": 1795.0,
+      "minimo": 1675,
+      "maximo": 1886,
+      "desviacion_estandar": 83.72255769305347,
+      "amplitud": 0.1259701492537313,
+      "cv": 0.04659882617424126
+    },
+    "price": {
+      "media": 262623.3333333333,
+      "mediana": 263841.0,
+      "minimo": 246461,
+      "maximo": 276492,
+      "desviacion_estandar": 10786.609711427715,
+      "amplitud": 0.12184889292829282,
+      "cv": 0.04107254894117449
+    },
+    "weeks": {
+      "media": 17.0,
+      "mediana": 17.0,
+      "minimo": 17,
+      "maximo": 17,
+      "desviacion_estandar": 0.0,
+      "amplitud": 0.0,
+      "cv": 0.0
+    }
+  },
+  "perfiles": {
+    "Gestión de proyecto": {
+      "llamadas": 6,
+      "media": 113.16666666666667,
+      "mediana": 114.0,
+      "minimo": 108,
+      "maximo": 117,
+      "desviacion_estandar": 3.5449494589721118,
+      "amplitud": 0.08333333333333326,
+      "cv": 0.03132503203804517
+    },
+    "Consultoría de RR. HH.": {
+      "llamadas": 6,
+      "media": 91.33333333333333,
+      "mediana": 91.0,
+      "minimo": 86,
+      "maximo": 98,
+      "desviacion_estandar": 5.887840577551898,
+      "amplitud": 0.13953488372093026,
+      "cv": 0.06446540778341495
+    },
+    "Liderazgo técnico": {
+      "llamadas": 6,
+      "media": 216.0,
+      "mediana": 216.5,
+      "minimo": 203,
+      "maximo": 225,
+      "desviacion_estandar": 7.483314773547883,
+      "amplitud": 0.10837438423645329,
+      "cv": 0.03464497580346242
+    },
+    "Backend": {
+      "llamadas": 6,
+      "media": 342.1666666666667,
+      "mediana": 334.0,
+      "minimo": 299,
+      "maximo": 406,
+      "desviacion_estandar": 37.22588705009817,
+      "amplitud": 0.35785953177257523,
+      "cv": 0.10879460414056942
+    },
+    "Ingeniería de datos": {
+      "llamadas": 6,
+      "media": 115.33333333333333,
+      "mediana": 116.0,
+      "minimo": 108,
+      "maximo": 122,
+      "desviacion_estandar": 6.282250127674532,
+      "amplitud": 0.12962962962962954,
+      "cv": 0.054470376829547966
+    },
+    "Ciencia de datos": {
+      "llamadas": 6,
+      "media": 14.666666666666666,
+      "mediana": 15.0,
+      "minimo": 8,
+      "maximo": 22,
+      "desviacion_estandar": 4.676180777800049,
+      "amplitud": 1.75,
+      "cv": 0.31883050757727605
+    },
+    "IA / ML": {
+      "llamadas": 6,
+      "media": 111.0,
+      "mediana": 111.0,
+      "minimo": 111,
+      "maximo": 111,
+      "desviacion_estandar": 0.0,
+      "amplitud": 0.0,
+      "cv": 0.0
+    },
+    "DevOps": {
+      "llamadas": 6,
+      "media": 82.5,
+      "mediana": 82.5,
+      "minimo": 78,
+      "maximo": 86,
+      "desviacion_estandar": 3.3316662497915366,
+      "amplitud": 0.10256410256410264,
+      "cv": 0.0403838333308065
+    },
+    "Diseño UX/UI": {
+      "llamadas": 6,
+      "media": 238.16666666666666,
+      "mediana": 238.5,
+      "minimo": 227,
+      "maximo": 247,
+      "desviacion_estandar": 7.494442385305705,
+      "amplitud": 0.08810572687224671,
+      "cv": 0.03146721785292808
+    },
+    "Frontend": {
+      "llamadas": 6,
+      "media": 271.1666666666667,
+      "mediana": 269.0,
+      "minimo": 252,
+      "maximo": 287,
+      "desviacion_estandar": 13.332916660156046,
+      "amplitud": 0.13888888888888884,
+      "cv": 0.0491687154031569
+    },
+    "Full-stack": {
+      "llamadas": 1,
+      "media": 4.0,
+      "mediana": 0.0,
+      "minimo": 0,
+      "maximo": 24,
+      "desviacion_estandar": 9.797958971132712,
+      "amplitud": null,
+      "cv": 2.449489742783178
+    },
+    "QA": {
+      "llamadas": 6,
+      "media": 197.16666666666666,
+      "mediana": 195.5,
+      "minimo": 187,
+      "maximo": 206,
+      "desviacion_estandar": 7.1949056051255225,
+      "amplitud": 0.10160427807486627,
+      "cv": 0.03649149081213283
+    }
+  },
+  "costo_total_usd": 0.0598
+}

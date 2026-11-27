@@ -2,7 +2,7 @@
 
 - Transcripción: `transcripciones/onboarding_seguridad_canteras.txt` (huella 402c1ff99f4f)
 - Cambios de alcance: no
-- Modelo: claude-haiku-5-5 · system prompt d574f47c2064 · commit 88c961b
+- Recorrido: directo · modelo: claude-haiku-5-5 · system prompt d574f47c2064 · commit 88c961b
 - Fecha: 2026-11-24T18:29:34
 - Llamadas válidas: 5 de 5 · costo total 0.0401 USD
 
@@ -48,7 +48,7 @@ Ordenados de más a menos variación. Si un perfil no aparece en una llamada, cu
 
 ## Puntos de alcance por confirmar
 
-Los redacta el modelo, así que el mismo punto puede salir con palabras distintas: hay que leerlos para ver si coinciden.
+En el recorrido directo los redacta el modelo, así que el mismo punto puede salir con palabras distintas: hay que leerlos para ver si coinciden. Con el inventario, son los requisitos opcionales o condicionados, con la descripción que les dio el modelo.
 
 **Llamada 1**
 - Quién produce los contenidos de la formación Parte 46 (módulos, videos y cuestionarios) y quién los traduce al español: no quedó decidido, así que no están estimados.

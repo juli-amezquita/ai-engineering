@@ -3,7 +3,7 @@
 - Las variables de entorno se fijan con una clave falsa y el `.env` no se lee, así que los tests
   dan lo mismo en local y en CI, donde no hay `.env`.
 - `fake_anthropic` sustituye el cliente de Anthropic por uno simulado que devuelve la respuesta
-  que se le dé.
+  que se le dé, o lanza la excepción que se le dé.
 """
 
 from types import SimpleNamespace
@@ -67,25 +67,29 @@ class FakeStream:
         return False
 
     async def get_final_message(self):
+        if isinstance(self.response, BaseException):  # la respuesta se cortó a mitad
+            raise self.response
         return self.response
 
 
 class FakeMessages:
-    def __init__(self, response):
-        self.response = response
+    """Devuelve las respuestas en orden; cuando se acaban, repite la última."""
+
+    def __init__(self, responses):
+        self.responses = responses
         self.calls: list[dict] = []
 
     def stream(self, **kwargs):
         self.calls.append(kwargs)
-        return FakeStream(self.response)
+        return FakeStream(self.responses[min(len(self.calls), len(self.responses)) - 1])
 
 
 @pytest.fixture
 def fake_anthropic(monkeypatch):
-    """Sustituye el cliente de Anthropic. Devuelve una función para fijar la respuesta."""
+    """Sustituye el cliente de Anthropic. Devuelve una función para fijar las respuestas, en orden."""
 
-    def use(response=None) -> FakeMessages:
-        messages = FakeMessages(response if response is not None else model_response())
+    def use(*responses) -> FakeMessages:
+        messages = FakeMessages(list(responses) or [model_response()])
         monkeypatch.setattr(llm_service, "get_client", lambda: SimpleNamespace(messages=messages))
         return messages
 

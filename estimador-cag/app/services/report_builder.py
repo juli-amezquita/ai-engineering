@@ -27,7 +27,11 @@ from app.context.cost_model import (
     TARGET_NET_MARGIN,
     UNITED_STATES,
 )
+from app.context.catalog import PLATFORM_NAMES
+from app.schemas.inventory import ScopeInventory
+from app.services.catalog_hours import REVIEW, InventoryHours
 from app.services.formatting import hours, number, pct, rate, usd
+from app.services.planning import ProjectPlan
 from app.services.pricing import INFO, OK, WARNING, ProjectPricing
 
 STATUS_ICON = {OK: "✅", WARNING: "⚠️", INFO: "ℹ️"}
@@ -86,7 +90,70 @@ def _statement_rows(pricing: ProjectPricing) -> list[str]:
     return out
 
 
-def build_internal_report(pricing: ProjectPricing, scope_changes: str | None = None) -> str:
+def _hours_origin(inventory: ScopeInventory, breakdown: InventoryHours) -> list[str]:
+    """De dónde sale cada hora: el catálogo o, si no tiene referencia, el modelo."""
+    w = [
+        "**De dónde salen las horas.** Python las calcula con el catálogo de componentes a partir "
+        "del inventario de alcance. El modelo solo pone las de los requisitos que el catálogo no "
+        f"cubre, marcadas «{REVIEW}». Plataforma: {PLATFORM_NAMES[inventory.platform]}.",
+        "",
+        "| Partida | Origen | Horas base | Referencia |",
+        "|---|---|---:|---|",
+    ]
+    w += [f"| {line.name} | {line.kind} | {number(line.total)} | {line.basis} |" for line in breakdown.lines]
+    w += [f"| **Total, sin imprevistos** | | **{number(breakdown.base_hours)}** | |", ""]
+    review = [line for line in breakdown.lines if line.kind == REVIEW]
+    if review:
+        w += ["**Horas que puso el modelo.** Revísalas antes de enviar la propuesta:", ""]
+        w += [
+            f"- ⚠️ {line.name}: " + (f"{number(line.total)} h." if line.total else "sin horas; no está en la estimación.")
+            for line in review
+        ]
+        w.append("")
+    if inventory.open_decisions:
+        w += ["**Decisiones abiertas, estimadas con un supuesto:**", ""]
+        w += [
+            f"- {decision.question} Se asume: {decision.assumed}. Opciones: {'; '.join(decision.options)}."
+            for decision in inventory.open_decisions
+        ]
+        w.append("")
+    excluded = [requirement for requirement in inventory.requirements if requirement.status == "excluido"]
+    if excluded:
+        w += ["**Excluido en la reunión:**", ""]
+        w += [f"- {requirement.description}" for requirement in excluded]
+        w.append("")
+    return w
+
+
+def _deadline_lines(plan: ProjectPlan, inventory: ScopeInventory | None) -> list[str]:
+    """El plazo que pidió el cliente, si ajustó las etapas del modelo y si el cronograma lo cumple."""
+    if plan.deadline_weeks is None:
+        return []
+    evidence = inventory.deadline.evidence.strip(" .«»\"") if inventory is not None and inventory.deadline else ""
+    lines = [f"Plazo que pidió el cliente: {plan.deadline_weeks} semanas" + (f" («{evidence}»)." if evidence else ".")]
+    if plan.fitted_to_deadline:
+        lines.append(
+            f"Las etapas del modelo sumaban {plan.proposed_weeks} semanas: Python las ajustó al plazo en la "
+            "misma proporción."
+        )
+    elif plan.proposed_weeks != plan.deadline_weeks:
+        lines.append(
+            f"Las etapas del modelo sumaban {plan.proposed_weeks} semanas. Ajustarlas al plazo daba un "
+            "cronograma más largo, así que Python parte de las semanas del modelo."
+        )
+    if plan.meets_deadline:
+        lines.append("El cronograma cumple el plazo.")
+    else:
+        lines.append(f"El cronograma no cabe en el plazo: dura {plan.duration_weeks} semanas.")
+    return lines
+
+
+def build_internal_report(
+    pricing: ProjectPricing,
+    scope_changes: str | None = None,
+    inventory: ScopeInventory | None = None,
+    breakdown: InventoryHours | None = None,
+) -> str:
     plan, s = pricing.plan, pricing.statement
     draft = plan.draft
     duration = plan.duration_weeks
@@ -148,6 +215,8 @@ def build_internal_report(pricing: ProjectPricing, scope_changes: str | None = N
     else:
         add("La reunión no dejó puntos de alcance sin decidir.")
     add("")
+    if inventory is not None and breakdown is not None:
+        w.extend(_hours_origin(inventory, breakdown))
 
     # 3. Cronograma
     add("## 3. Cronograma por etapa")
@@ -156,9 +225,10 @@ def build_internal_report(pricing: ProjectPricing, scope_changes: str | None = N
     add("|---|---|---|---|---|")
     w.extend(_phase_rows(pricing, with_proposed=True))
     add("")
-    for adjustment in plan.adjustments:
-        add(f"- {adjustment}")
-    if plan.adjustments:
+    deadline = _deadline_lines(plan, inventory)
+    for line in [*deadline, *plan.adjustments]:
+        add(f"- {line}")
+    if deadline or plan.adjustments:
         add("")
 
     # 4. Tareas

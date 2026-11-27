@@ -1,0 +1,226 @@
+{
+  "run": 1,
+  "ok": true,
+  "model": "claude-haiku-5-5",
+  "input_tokens": 1656,
+  "cache_creation_input_tokens": 7176,
+  "cache_read_input_tokens": 0,
+  "output_tokens": 7474,
+  "latency_ms": 33003,
+  "estimated_cost_usd": 0.0048,
+  "inventory": {
+    "is_software_project": true,
+    "not_software_reason": "",
+    "product_types": [
+      "incorporacion",
+      "formacion",
+      "seguridad_salud",
+      "asistente_rrhh",
+      "analitica_personas"
+    ],
+    "platform": "web",
+    "platform_reason": "La tablet de la caseta del supervisor funciona con navegador y la reunion pide que lo que hagamos funcione sin conexion. No se pide ningun uso de hardware del dispositivo que exija app nativa, asi que se asume web instalable.",
+    "requirements": [
+      {
+        "description": "App de incorporacion para tablet con los modulos de la Parte 46 en ingles o espanol, con videos cortos y cuestionarios",
+        "status": "acordado",
+        "evidence": "Una app de incorporación para tablet. La persona nueva hace los módulos de la Parte 46 en inglés o en español, con videos cortos y cuestionarios",
+        "component": "lecciones_y_cuestionarios",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Modulos con variantes de idioma y seguimiento por persona, con dos tipos de usuario (personas nuevas y supervisores); encaja en M",
+        "custom_hours": []
+      },
+      {
+        "description": "Interfaz y contenidos en ingles y espanol, porque un 40 % de la plantilla de cantera prefiere el espanol",
+        "status": "acordado",
+        "evidence": "Un 40 % de la plantilla de cantera prefiere el español",
+        "component": "varios_idiomas",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Dos idiomas en la interfaz y los contenidos principales; primera version",
+        "custom_hours": []
+      },
+      {
+        "description": "El supervisor marca en la tablet la formacion de cada tarea y firma ahi mismo; el certificado 5000-23 se genera solo y queda guardado",
+        "status": "acordado",
+        "evidence": "el supervisor marca en la tablet la formación de cada tarea y firma ahí mismo. El certificado 5000-23 se genera solo y queda guardado",
+        "component": "documentos_y_firmas",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Generacion de un formulario en PDF con datos de cada tarea y firma en pantalla, con varias tareas por persona; M",
+        "custom_hours": [
+          {
+            "role": "Backend",
+            "hours": 16
+          },
+          {
+            "role": "Frontend",
+            "hours": 12
+          },
+          {
+            "role": "Diseño UX/UI",
+            "hours": 4
+          },
+          {
+            "role": "QA",
+            "hours": 4
+          }
+        ]
+      },
+      {
+        "description": "Uso de la aplicacion sin cobertura en las canteras, con sincronizacion al recuperarla",
+        "status": "acordado",
+        "evidence": "la cobertura es muy mala en varias, así que lo que hagamos tiene que funcionar sin conexión",
+        "component": "modo_sin_conexion",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Canteras con cobertura mala: registros de formacion y firmas que se sincronizan; M por el volumen de datos y los conflictos posibles",
+        "custom_hours": []
+      },
+      {
+        "description": "Aviso antes de que venza el reciclaje anual de cada persona",
+        "status": "acordado",
+        "evidence": "Que avise antes de que venza el reciclaje anual de cada persona",
+        "component": "notificaciones",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Un tipo de recordatorio programado por vencimiento; primera version",
+        "custom_hours": []
+      },
+      {
+        "description": "Panel por cantera para el gerente de EHS: quien esta al dia, quien tiene formacion pendiente y que vence este mes, para mostrar en inspecciones",
+        "status": "acordado",
+        "evidence": "Un panel para mí, por cantera: quién está al día, quién tiene formación pendiente y qué vence este mes",
+        "component": "paneles_y_reportes",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Indicadores con filtros por cantera y por estado de formacion; M",
+        "custom_hours": []
+      },
+      {
+        "description": "Cuentas y permisos por rol: personas nuevas, supervisores, gerente de EHS y equipo de RR. HH.",
+        "status": "acordado",
+        "evidence": "el supervisor marca en la tablet la formación de cada tarea y firma ahí mismo. Un panel para mí, por cantera",
+        "component": "cuentas_y_roles",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Varios tipos de usuario con permisos distintos por cantera; M",
+        "custom_hours": []
+      },
+      {
+        "description": "Asistente en la tablet que responde con los manuales de seguridad y procedimientos, cita la fuente y deriva al supervisor si no hay respuesta",
+        "status": "acordado",
+        "evidence": "un asistente en la tablet que responda con nuestros manuales de seguridad y procedimientos. Son unos 40 documentos",
+        "component": "asistente_sobre_documentos",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Unos 40 documentos propios, con citas de fuente, rechazo de respuestas sin soporte y conjunto de preguntas de evaluacion; M",
+        "custom_hours": []
+      },
+      {
+        "description": "Encuesta corta de seguimiento a los 30, 60 y 90 dias de cada persona nueva",
+        "status": "acordado",
+        "evidence": "un seguimiento a los 30, 60 y 90 días con una encuesta corta",
+        "component": "encuestas",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Una encuesta corta con tres envios programados por persona; primera version",
+        "custom_hours": [
+          {
+            "role": "Backend",
+            "hours": 8
+          },
+          {
+            "role": "Frontend",
+            "hours": 6
+          },
+          {
+            "role": "QA",
+            "hours": 2
+          }
+        ]
+      },
+      {
+        "description": "Analisis de la rotacion en los primeros 90 dias por cantera y por supervisor, para saber si la incorporacion funciona",
+        "status": "acordado",
+        "evidence": "cruzarlo con la rotación por cantera y por supervisor",
+        "component": "analitica_de_personas",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Historial de altas y bajas por cantera y supervisor, con indicadores de rotacion; M",
+        "custom_hours": [
+          {
+            "role": "Ingeniería de datos",
+            "hours": 24
+          },
+          {
+            "role": "Ciencia de datos",
+            "hours": 12
+          },
+          {
+            "role": "Backend",
+            "hours": 8
+          },
+          {
+            "role": "Frontend",
+            "hours": 8
+          },
+          {
+            "role": "QA",
+            "hours": 4
+          }
+        ]
+      },
+      {
+        "description": "Piloto de la app en dos canteras, con acompanamiento de los supervisores en sus sedes",
+        "status": "condicionado",
+        "evidence": "Podríamos empezar con un piloto en dos canteras",
+        "component": "formacion_y_cambio",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Piloto en dos canteras, condicionado a la decision del cliente; S",
+        "custom_hours": [
+          {
+            "role": "Consultoría de RR. HH.",
+            "hours": 24
+          },
+          {
+            "role": "Gestión de proyecto",
+            "hours": 4
+          }
+        ]
+      },
+      {
+        "description": "Formacion de riesgos del lugar para contratistas que entran a las canteras",
+        "status": "opcional",
+        "evidence": "los contratistas que entran a las canteras necesitan la formación de riesgos del lugar. Si se puede incluir, mejor, pero no es lo principal",
+        "component": "lecciones_y_cuestionarios",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Un modulo de riesgos del lugar para contratistas, reutilizando la plataforma de formacion; no es lo principal",
+        "custom_hours": []
+      }
+    ],
+    "open_decisions": [
+      {
+        "question": "¿Se integra la app con el HRIS de la empresa para leer datos de empleados?",
+        "options": [
+          "Sí, con lectura de empleados",
+          "No, la app gestiona sus propios datos"
+        ],
+        "assumed": "No, la app gestiona sus propios datos",
+        "evidence": "El HRIS, que tiene API"
+      },
+      {
+        "question": "¿Se incluye la formacion de riesgos del lugar para contratistas en la primera version?",
+        "options": [
+          "Sí, en la primera version",
+          "No, en una fase posterior"
+        ],
+        "assumed": "No, en una fase posterior",
+        "evidence": "Si se puede incluir, mejor, pero no es lo principal"
+      }
+    ]
+  }
+}

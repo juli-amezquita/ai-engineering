@@ -4,8 +4,8 @@ import pytest
 
 from app.context.examples import ESTIMATION_EXAMPLES
 from app.schemas.draft import EstimationDraft, RoleHours, Task
-from app.services.planning import InvalidDraftError, NotASoftwareProjectError, build_plan
-from app.services.pricing import WARNING, price_project
+from app.services.planning import InvalidDraftError, NotASoftwareProjectError, build_plan, fit_to_deadline
+from app.services.pricing import OK, WARNING, price_project
 from app.services.report_builder import build_client_proposal, build_internal_report
 
 # Análisis v6 del vault: precio, honorarios, costo del equipo, utilidad neta y tarifa media.
@@ -103,3 +103,52 @@ def test_open_scope_questions_are_flagged_not_estimated():
     without = pricing_of(ESTIMATION_EXAMPLES[0].draft)
     assert "Puntos por confirmar" not in build_client_proposal(without)
     assert not any("sin decidir" in check.text for check in without.checks)
+
+
+@pytest.mark.parametrize(
+    ("weeks", "deadline", "fitted"),
+    [
+        ([3, 9, 4, 2], 17, [3, 8, 4, 2]),  # 18 semanas: se quita una a la etapa con menos resto
+        ([3, 7, 3], 17, [4, 9, 4]),  # 13 semanas: se reparten 4 más en la misma proporción
+        ([3, 9, 2, 2], 16, [3, 9, 2, 2]),  # ya suma el plazo
+        ([1, 1, 10], 4, [1, 1, 2]),  # cada etapa conserva al menos una semana
+        ([2, 2], 1, [2, 2]),  # más etapas que semanas: no se toca
+    ],
+)
+def test_phases_are_fitted_to_the_deadline(weeks, deadline, fitted):
+    assert fit_to_deadline(weeks, deadline) == fitted
+    assert sum(fitted) == deadline or deadline < len(weeks)
+
+
+def test_a_feasible_deadline_is_met():
+    draft = ESTIMATION_EXAMPLES[0].draft  # 16 semanas propuestas
+    plan = build_plan(draft, deadline_weeks=17)
+    assert plan.duration_weeks == 17 and plan.proposed_weeks == 16 and plan.meets_deadline
+    assert build_plan(draft).meets_deadline is None
+    checks = price_project(plan).checks
+    assert any(check.status == OK and "cumple el plazo" in check.text for check in checks)
+
+
+def test_an_impossible_deadline_is_flagged_not_forced():
+    draft = ESTIMATION_EXAMPLES[0].draft  # 16 semanas propuestas: [3, 9, 2, 2]
+    plan = build_plan(draft, deadline_weeks=15)
+    assert plan.fitted_to_deadline and plan.meets_deadline is False
+    assert plan.duration_weeks == 16
+    assert all(plan.peak_dedication(role) <= 1 + 1e-9 for role in plan.weekly_hours)
+    # el alargue parte de las semanas ajustadas al plazo, no de las del modelo
+    assert plan.adjustments == (
+        "La etapa 2, «Construcción», pasa de 8 a 9 semanas para que Backend, IA / ML no pase de 40 horas por semana.",
+    )
+    checks = price_project(plan).checks
+    assert any(check.status == WARNING and "el cliente pidió 15" in check.text for check in checks)
+
+
+def test_a_squeezed_schedule_never_ends_later_than_the_model_proposal():
+    draft = ESTIMATION_EXAMPLES[0].draft
+    # Apretadas a 8 semanas y alargadas etapa por etapa, terminarían en la 17; las del modelo, en la 16.
+    plan = build_plan(draft, deadline_weeks=8)
+    assert plan.duration_weeks == build_plan(draft).duration_weeks == 16
+    assert not plan.fitted_to_deadline and plan.meets_deadline is False
+    report = build_internal_report(price_project(plan))
+    assert "Ajustarlas al plazo daba un cronograma más largo" in report
+    assert "El cronograma no cabe en el plazo: dura 16 semanas." in report

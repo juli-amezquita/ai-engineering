@@ -2,15 +2,21 @@
 
 Manda la misma transcripción varias veces al modelo real, guarda cada borrador y mide cuánto
 cambian las cifras que Python calcula con ellos: horas base, precio, semanas, horas de cada perfil
-y los puntos de alcance que el modelo deja por confirmar.
+y los puntos de alcance que quedan por confirmar.
+
+Mide cualquiera de los dos recorridos, con `--pipeline`:
+- inventario (el del servicio): el inventario de alcance, las horas del catálogo y el plan, en dos
+  llamadas (app/services/plan_service.py);
+- directo: el borrador en una sola llamada, con las horas del modelo. Es la línea base.
 
 Sirve para juzgar con números cualquier cambio del prompt, de los ejemplos o del preprocesamiento:
 se mide una línea base, se hace el cambio y se vuelve a medir con la misma transcripción.
 
-Cada llamada cuesta dinero (unos 0.01 USD con claude-haiku-5-5) y tarda cerca de un minuto, así
+Cada estimación cuesta dinero (unos 0.01 USD con claude-haiku-5-5) y tarda cerca de un minuto, así
 que no se ejecuta en los tests ni en el pipeline: se lanza a mano desde estimador-cag/.
 
-    uv run python -m evals.consistency run transcripciones/onboarding_seguridad_canteras.txt --runs 5 --label linea-base
+    uv run python -m evals.consistency run transcripciones/onboarding_seguridad_canteras.txt --runs 10 --label inventario-v1
+    uv run python -m evals.consistency run transcripciones/onboarding_seguridad_canteras.txt --runs 5 --pipeline directo --label linea-base
     uv run python -m evals.consistency report evals/resultados/<carpeta> [<otra carpeta> ...]
 
 `run` guarda en evals/resultados/<fecha>_<etiqueta>/ un JSON por llamada, la configuración y el
@@ -41,8 +47,11 @@ from pydantic import ValidationError
 
 from app.config import get_settings
 from app.schemas.draft import EstimationDraft
+from app.schemas.inventory import Deadline
 from app.services.formatting import number, pct
+from app.services.inventory_service import get_inventory_prompt
 from app.services.llm_service import DraftResult, generate_draft, get_system_prompt
+from app.services.plan_service import generate_draft_from_inventory, get_plan_prompt
 from app.services.planning import build_plan
 from app.services.pricing import price_project
 
@@ -63,6 +72,12 @@ FATAL_ERRORS = (
 )
 
 Generator = Callable[[str, str | None], Awaitable[DraftResult]]
+
+# Los dos recorridos: cómo se genera el borrador y con qué system prompts.
+PIPELINES: dict[str, tuple[Generator, Callable[[], list[str]]]] = {
+    "inventario": (generate_draft_from_inventory, lambda: [get_inventory_prompt(), get_plan_prompt()]),
+    "directo": (generate_draft, lambda: [get_system_prompt()]),
+}
 
 # Las cifras que se comparan entre llamadas: (atributo de RunMetrics, nombre en el informe).
 FIGURES = (("base_hours", "Horas base"), ("price", "Precio (USD)"), ("weeks", "Semanas"))
@@ -98,8 +113,34 @@ def run_path(folder: Path, run: int) -> Path:
     return folder / f"llamada_{run:02d}.json"
 
 
+def draft_record(result: DraftResult) -> dict:
+    """Lo que se guarda de una estimación: el borrador, el inventario si lo hubo y cada llamada."""
+    record = {
+        "model": result.model,
+        "provider": result.provider,
+        "input_tokens": result.input_tokens,
+        "cache_creation_input_tokens": result.cache_creation_input_tokens,
+        "cache_read_input_tokens": result.cache_read_input_tokens,
+        "output_tokens": result.output_tokens,
+        "latency_ms": result.latency_ms,
+        "estimated_cost_usd": result.estimated_cost_usd,
+        "draft": result.draft.model_dump(mode="json"),
+        "calls": [
+            {**vars(call), "estimated_cost_usd": call.estimated_cost_usd} for call in result.calls
+        ],
+    }
+    if result.inventory is not None:
+        record["inventory"] = result.inventory.model_dump(mode="json")
+    return record
+
+
 async def call_once(
-    run: int, transcription: str, scope_changes: str | None, generate: Generator, folder: Path
+    run: int,
+    transcription: str,
+    scope_changes: str | None,
+    generate: Generator,
+    folder: Path,
+    serialize: Callable[[object], dict] = draft_record,
 ) -> dict:
     """Una llamada. Si falla, el error se guarda como un resultado más: también cuenta."""
     start = time.perf_counter()
@@ -116,20 +157,8 @@ async def call_once(
         }
         print(f"  Llamada {run}: falló ({record['error']})", flush=True)
     else:
-        record = {
-            "run": run,
-            "ok": True,
-            "model": result.model,
-            "provider": result.provider,
-            "input_tokens": result.input_tokens,
-            "cache_creation_input_tokens": result.cache_creation_input_tokens,
-            "cache_read_input_tokens": result.cache_read_input_tokens,
-            "output_tokens": result.output_tokens,
-            "latency_ms": result.latency_ms,
-            "estimated_cost_usd": result.estimated_cost_usd,
-            "draft": result.draft.model_dump(mode="json"),
-        }
-        print(f"  Llamada {run}: lista en {result.latency_ms / 1000:.0f} s", flush=True)
+        record = {"run": run, "ok": True, **serialize(result)}
+        print(f"  Llamada {run}: lista en {record['latency_ms'] / 1000:.0f} s", flush=True)
     run_path(folder, run).write_text(
         json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -144,18 +173,20 @@ async def run_many(
     scope_changes: str | None = None,
     concurrency: int = 4,
     generate: Generator = generate_draft,
+    serialize: Callable[[object], dict] = draft_record,
 ) -> list[dict]:
     """Lanza `runs` llamadas con la misma transcripción y guarda cada una en `folder`.
 
     La primera va sola: escribe el system prompt en la caché del proveedor, y las demás lo leen
     a una décima parte del precio. Las demás van en paralelo, como mucho `concurrency` a la vez.
+    `serialize` decide qué se guarda de cada respuesta (el borrador por defecto).
     """
-    records = [await call_once(1, transcription, scope_changes, generate, folder)]
+    records = [await call_once(1, transcription, scope_changes, generate, folder, serialize)]
     semaphore = asyncio.Semaphore(concurrency)
 
     async def limited(run: int) -> dict:
         async with semaphore:
-            return await call_once(run, transcription, scope_changes, generate, folder)
+            return await call_once(run, transcription, scope_changes, generate, folder, serialize)
 
     records += await asyncio.gather(*(limited(run) for run in range(2, runs + 1)))
     return records
@@ -175,6 +206,7 @@ class RunMetrics:
     price: int
     weeks: int  # duración final, después de los ajustes de Python
     proposed_weeks: int  # lo que propuso el modelo
+    requested_weeks: int | None  # el plazo que pidió el cliente, según el inventario
     tasks: int
     hours_by_role: dict[str, int]
     open_scope_questions: tuple[str, ...]
@@ -184,9 +216,14 @@ class RunMetrics:
 
 
 def measure(
-    run: int, draft: EstimationDraft, *, cost_usd: float | None = None, latency_ms: int = 0
+    run: int,
+    draft: EstimationDraft,
+    *,
+    deadline_weeks: int | None = None,
+    cost_usd: float | None = None,
+    latency_ms: int = 0,
 ) -> RunMetrics:
-    pricing = price_project(build_plan(draft))
+    pricing = price_project(build_plan(draft, deadline_weeks=deadline_weeks))
     plan = pricing.plan
     return RunMetrics(
         run=run,
@@ -194,6 +231,7 @@ def measure(
         price=pricing.statement.price,
         weeks=plan.duration_weeks,
         proposed_weeks=sum(phase.weeks for phase in draft.phases),
+        requested_weeks=deadline_weeks,
         tasks=len(draft.tasks),
         hours_by_role=dict(plan.base_hours_by_role),
         open_scope_questions=tuple(draft.open_scope_questions),
@@ -327,10 +365,13 @@ def load_summary(folder: Path) -> Summary:
             continue
         try:
             draft = EstimationDraft.model_validate(record["draft"])
+            # Los resultados anteriores al plazo no lo traen en el inventario: se miden sin plazo.
+            deadline = (record.get("inventory") or {}).get("deadline")
             metrics.append(
                 measure(
                     record["run"],
                     draft,
+                    deadline_weeks=Deadline.model_validate(deadline).weeks if deadline else None,
                     cost_usd=record.get("estimated_cost_usd"),
                     latency_ms=record.get("latency_ms", 0),
                 )
@@ -366,7 +407,7 @@ def render_report(summary: Summary) -> str:
         lines += [
             f"- Transcripción: `{config.get('transcription')}` (huella {config.get('transcription_fingerprint')})",
             f"- Cambios de alcance: {'sí, huella ' + config['scope_changes_fingerprint'] if config.get('scope_changes_fingerprint') else 'no'}",
-            f"- Modelo: {config.get('model')} · system prompt {config.get('system_prompt_fingerprint')} · commit {config.get('git_commit')}",
+            f"- Recorrido: {config.get('pipeline', 'directo')} · modelo: {config.get('model')} · system prompt {config.get('system_prompt_fingerprint')} · commit {config.get('git_commit')}",
             f"- Fecha: {config.get('started_at')}",
         ]
     cost = summary.total_cost_usd
@@ -415,21 +456,22 @@ def render_report(summary: Summary) -> str:
         "",
         "## Cada llamada",
         "",
-        "| Llamada | Horas base | Precio (USD) | Semanas (propuestas) | Tareas | Puntos por confirmar | Etapas alargadas por Python |",
-        "|---:|---:|---:|---:|---:|---:|---:|",
+        "| Llamada | Horas base | Precio (USD) | Semanas (propuestas) | Plazo pedido | Tareas | Puntos por confirmar | Etapas alargadas por Python |",
+        "|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for metrics in summary.metrics:
         lines.append(
             f"| {metrics.run} | {number(metrics.base_hours)} | {number(metrics.price)} | "
-            f"{metrics.weeks} ({metrics.proposed_weeks}) | {metrics.tasks} | "
+            f"{metrics.weeks} ({metrics.proposed_weeks}) | {metrics.requested_weeks or '—'} | {metrics.tasks} | "
             f"{len(metrics.open_scope_questions)} | {metrics.adjustments} |"
         )
     lines += [
         "",
         "## Puntos de alcance por confirmar",
         "",
-        "Los redacta el modelo, así que el mismo punto puede salir con palabras distintas: hay que "
-        "leerlos para ver si coinciden.",
+        "En el recorrido directo los redacta el modelo, así que el mismo punto puede salir con "
+        "palabras distintas: hay que leerlos para ver si coinciden. Con el inventario, son los "
+        "requisitos opcionales o condicionados, con la descripción que les dio el modelo.",
         "",
     ]
     for metrics in summary.metrics:
@@ -537,16 +579,18 @@ def command_run(args: argparse.Namespace) -> int:
         print(f"La configuración no es válida: {error}", file=sys.stderr)
         return 2
 
-    label = args.label or args.transcription.stem
+    generate, prompts = PIPELINES[args.pipeline]
+    label = args.label or f"{args.pipeline}-{args.transcription.stem}"
     folder = new_folder(label)
     config = {
         "label": label,
+        "pipeline": args.pipeline,
         "transcription": str(args.transcription),
         "transcription_fingerprint": fingerprint(transcription),
         "scope_changes_fingerprint": fingerprint(scope_changes) if scope_changes else None,
         "model": settings.LLM_MODEL,
         "provider": settings.LLM_PROVIDER,
-        "system_prompt_fingerprint": fingerprint(get_system_prompt()),
+        "system_prompt_fingerprint": fingerprint("\n".join(prompts())),
         "git_commit": git_commit(),
         "runs": args.runs,
         "started_at": datetime.now().isoformat(timespec="seconds"),
@@ -554,7 +598,8 @@ def command_run(args: argparse.Namespace) -> int:
     (folder / CONFIG_FILE).write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print(
-        f"{args.runs} llamadas reales a {settings.LLM_MODEL} (unos {0.01 * args.runs:.2f} USD). "
+        f"{args.runs} estimaciones reales con {settings.LLM_MODEL}, recorrido {args.pipeline} "
+        f"(unos {0.01 * args.runs:.2f} USD). "
         f"Resultados en {_shown(folder)}",
         flush=True,
     )
@@ -565,7 +610,7 @@ def command_run(args: argparse.Namespace) -> int:
             folder=folder,
             scope_changes=scope_changes,
             concurrency=args.concurrency,
-            generate=generate_draft,
+            generate=generate,
         )
     )
     print()
@@ -603,6 +648,10 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--label", help="nombre de la ejecución, por ejemplo linea-base")
     run.add_argument("--scope-changes", type=Path, help="archivo con los cambios de alcance de la consultora")
     run.add_argument("--concurrency", type=int, default=4, help="llamadas en paralelo después de la primera")
+    run.add_argument(
+        "--pipeline", choices=list(PIPELINES), default="inventario",
+        help="inventario (dos llamadas, el del servicio) o directo (una llamada, la línea base)",
+    )
     run.set_defaults(handler=command_run)
 
     report = commands.add_parser("report", help="recalcula el informe de una o varias carpetas, sin llamar al modelo")

@@ -1,0 +1,161 @@
+{
+  "etiqueta": "estimacion-con-plazo",
+  "config": {
+    "label": "estimacion-con-plazo",
+    "pipeline": "inventario",
+    "transcription": "transcripciones/onboarding_seguridad_canteras.txt",
+    "transcription_fingerprint": "402c1ff99f4f",
+    "scope_changes_fingerprint": null,
+    "model": "claude-haiku-5-5",
+    "provider": "anthropic",
+    "system_prompt_fingerprint": "3b479127cf2c",
+    "git_commit": "96aef76 con cambios sin commit en app/",
+    "runs": 10,
+    "started_at": "2026-11-25T13:32:36"
+  },
+  "llamadas": 10,
+  "validas": 10,
+  "fallidas": [],
+  "cifras": {
+    "base_hours": {
+      "media": 1831.9,
+      "mediana": 1791.5,
+      "minimo": 1725,
+      "maximo": 2077,
+      "desviacion_estandar": 103.83261101942449,
+      "amplitud": 0.20405797101449274,
+      "cv": 0.056680283323011345
+    },
+    "price": {
+      "media": 268506.0,
+      "mediana": 263044.0,
+      "minimo": 253801,
+      "maximo": 311052,
+      "desviacion_estandar": 17252.784696325918,
+      "amplitud": 0.2255743673192776,
+      "cv": 0.0642547455041076
+    },
+    "weeks": {
+      "media": 17.0,
+      "mediana": 17.0,
+      "minimo": 17,
+      "maximo": 17,
+      "desviacion_estandar": 0.0,
+      "amplitud": 0.0,
+      "cv": 0.0
+    }
+  },
+  "perfiles": {
+    "Gestión de proyecto": {
+      "llamadas": 10,
+      "media": 116.0,
+      "mediana": 111.5,
+      "minimo": 109,
+      "maximo": 139,
+      "desviacion_estandar": 10.154364141151877,
+      "amplitud": 0.27522935779816504,
+      "cv": 0.0875376219064817
+    },
+    "Consultoría de RR. HH.": {
+      "llamadas": 10,
+      "media": 90.8,
+      "mediana": 86.0,
+      "minimo": 86,
+      "maximo": 109,
+      "desviacion_estandar": 7.509993342207435,
+      "amplitud": 0.2674418604651163,
+      "cv": 0.08270917777761493
+    },
+    "Liderazgo técnico": {
+      "llamadas": 10,
+      "media": 217.2,
+      "mediana": 213.5,
+      "minimo": 208,
+      "maximo": 242,
+      "desviacion_estandar": 10.031062866028815,
+      "amplitud": 0.16346153846153855,
+      "cv": 0.0461835306907404
+    },
+    "Backend": {
+      "llamadas": 10,
+      "media": 350.3,
+      "mediana": 343.0,
+      "minimo": 310,
+      "maximo": 420,
+      "desviacion_estandar": 29.013598344377915,
+      "amplitud": 0.35483870967741926,
+      "cv": 0.08282500241044223
+    },
+    "Ingeniería de datos": {
+      "llamadas": 10,
+      "media": 123.3,
+      "mediana": 116.0,
+      "minimo": 108,
+      "maximo": 171,
+      "desviacion_estandar": 18.571483516402235,
+      "amplitud": 0.5833333333333333,
+      "cv": 0.1506203042692801
+    },
+    "Ciencia de datos": {
+      "llamadas": 10,
+      "media": 15.2,
+      "mediana": 16.0,
+      "minimo": 8,
+      "maximo": 24,
+      "desviacion_estandar": 4.541169697580374,
+      "amplitud": 2.0,
+      "cv": 0.2987611643144983
+    },
+    "IA / ML": {
+      "llamadas": 10,
+      "media": 116.5,
+      "mediana": 111.0,
+      "minimo": 111,
+      "maximo": 166,
+      "desviacion_estandar": 17.392527130926087,
+      "amplitud": 0.49549549549549554,
+      "cv": 0.14929207837704797
+    },
+    "DevOps": {
+      "llamadas": 10,
+      "media": 83.8,
+      "mediana": 82.0,
+      "minimo": 80,
+      "maximo": 93,
+      "desviacion_estandar": 3.9384147967311813,
+      "amplitud": 0.1625000000000001,
+      "cv": 0.04699778993712627
+    },
+    "Diseño UX/UI": {
+      "llamadas": 10,
+      "media": 242.7,
+      "mediana": 243.0,
+      "minimo": 235,
+      "maximo": 249,
+      "desviacion_estandar": 4.001388647846034,
+      "amplitud": 0.05957446808510647,
+      "cv": 0.016486974239167836
+    },
+    "Frontend": {
+      "llamadas": 10,
+      "media": 279.6,
+      "mediana": 278.0,
+      "minimo": 261,
+      "maximo": 295,
+      "desviacion_estandar": 10.458383134011575,
+      "amplitud": 0.13026819923371646,
+      "cv": 0.03740480376971235
+    },
+    "QA": {
+      "llamadas": 10,
+      "media": 196.5,
+      "mediana": 191.0,
+      "minimo": 182,
+      "maximo": 246,
+      "desviacion_estandar": 19.12095999449586,
+      "amplitud": 0.35164835164835173,
+      "cv": 0.0973076844503606
+    }
+  },
+  "costo_total_usd": 0.103
+}

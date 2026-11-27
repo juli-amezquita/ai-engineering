@@ -1,0 +1,13 @@
+{
+  "label": "estimacion-con-inventario",
+  "pipeline": "inventario",
+  "transcription": "transcripciones/onboarding_seguridad_canteras.txt",
+  "transcription_fingerprint": "402c1ff99f4f",
+  "scope_changes_fingerprint": null,
+  "model": "claude-haiku-5-5",
+  "provider": "anthropic",
+  "system_prompt_fingerprint": "7f22312e0b1b",
+  "git_commit": "96aef76 con cambios sin commit en app/",
+  "runs": 10,
+  "started_at": "2026-11-24T20:49:55"
+}

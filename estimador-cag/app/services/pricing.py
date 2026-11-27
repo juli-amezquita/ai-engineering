@@ -319,6 +319,14 @@ def _checks(pricing: "ProjectPricing") -> tuple[Check, ...]:
     )))
     for adjustment in plan.adjustments:
         checks.append(Check(WARNING, f"Python alargó el cronograma propuesto: {adjustment}"))
+    if plan.meets_deadline:
+        checks.append(Check(OK, f"El cronograma cumple el plazo que pidió el cliente: {plan.deadline_weeks} semanas."))
+    elif plan.meets_deadline is False:
+        checks.append(Check(WARNING, (
+            f"El cronograma dura {plan.duration_weeks} semanas y el cliente pidió {plan.deadline_weeks}: con un "
+            "profesional por perfil, el equipo no cabe en el plazo. Antes de enviar la propuesta, habla con el "
+            "cliente del plazo o del alcance."
+        )))
     open_questions = len(plan.draft.open_scope_questions)
     if open_questions:
         if open_questions == 1:

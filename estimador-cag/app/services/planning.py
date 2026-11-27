@@ -2,11 +2,15 @@
 
 El modelo propone etapas con sus semanas y tareas con las horas base de cada perfil. Python:
 - valida el borrador (etapas, tareas y gastos coherentes);
+- si el cliente pidió un plazo, ajusta las semanas de las etapas para que sumen ese plazo, en la
+  misma proporción que propuso el modelo;
 - suma el 10 % de imprevistos a cada profesional;
 - reparte las horas de cada tarea por igual entre las semanas de sus etapas;
 - comprueba la carga semanal de cada perfil (un profesional por perfil, 40 horas por semana con
   los imprevistos incluidos) y, si alguien no cabe, alarga una semana la etapa en la que no cabe
-  hasta que quepa. Así ninguna dedicación pasa nunca del 100 %, y no depende del modelo.
+  hasta que quepa. Así ninguna dedicación pasa nunca del 100 %, y no depende del modelo. Si
+  para eso hay que pasar del plazo del cliente, el cronograma pasa del plazo y los controles lo
+  avisan: el plazo nunca se cumple a costa de sobrecargar a nadie.
 """
 
 from dataclasses import dataclass
@@ -73,11 +77,24 @@ class ProjectPlan:
     expenses: tuple[ExpenseLine, ...]
     base_hours_by_role: dict[str, int]  # en el orden en que aparece cada perfil
     weekly_hours: dict[str, tuple[float, ...]]  # horas con imprevistos de cada perfil, semana a semana
-    adjustments: tuple[str, ...]  # cambios de Python al cronograma propuesto
+    adjustments: tuple[str, ...]  # etapas que Python alargó porque alguien no cabía
+    deadline_weeks: int | None = None  # el plazo que pidió el cliente, si pidió alguno
+    fitted_to_deadline: bool = False  # si Python ajustó las semanas del modelo a ese plazo
 
     @property
     def duration_weeks(self) -> int:
         return self.phases[-1].end_week
+
+    @property
+    def proposed_weeks(self) -> int:
+        """Lo que sumaban las etapas que propuso el modelo."""
+        return sum(phase.proposed_weeks for phase in self.phases)
+
+    @property
+    def meets_deadline(self) -> bool | None:
+        if self.deadline_weeks is None:
+            return None
+        return self.duration_weeks <= self.deadline_weeks
 
     def total_hours(self, role: str) -> float:
         return self.base_hours_by_role[role] * (1 + CONTINGENCY_RATE)
@@ -157,22 +174,58 @@ def _first_overload(load: dict[str, list[float]]) -> tuple[int, list[str]] | Non
     return None
 
 
-def build_plan(draft: EstimationDraft) -> ProjectPlan:
-    """Valida el borrador y devuelve un cronograma en el que nadie pasa del 100 % de dedicación."""
-    validate_draft(draft)
-    weeks = [phase.weeks for phase in draft.phases]
+def fit_to_deadline(weeks: list[int], deadline: int) -> list[int]:
+    """Las semanas de cada etapa, en la proporción que propuso el modelo, para que sumen el plazo.
+
+    Redondea por el mayor resto, como el reparto de horas entre perfiles, y deja al menos una
+    semana por etapa. Si hay más etapas que semanas de plazo, no las toca.
+    """
+    total = sum(weeks)
+    if total == deadline or deadline < len(weeks):
+        return list(weeks)
+    shares = [phase_weeks * deadline / total for phase_weeks in weeks]
+    fitted = [max(1, int(share)) for share in shares]
+    by_remainder = sorted(range(len(weeks)), key=lambda i: shares[i] - int(shares[i]), reverse=True)
+    for i in by_remainder[: max(deadline - sum(fitted), 0)]:
+        fitted[i] += 1
+    while sum(fitted) > deadline:  # el mínimo de una semana puede pasarse: se quita a la más larga
+        fitted[fitted.index(max(fitted))] -= 1
+    return fitted
+
+
+def _extend(draft: EstimationDraft, planned: list[int]) -> tuple[list[int], dict[int, set[str]], dict[str, list[float]]]:
+    """Alarga una semana la etapa de la primera semana en la que alguien no cabe, hasta que quepan todos."""
+    weeks = list(planned)
     overloaded_roles: dict[int, set[str]] = {}
     for _ in range(MAX_EXTRA_WEEKS + 1):
         load = _weekly_hours(draft, weeks)
         overload = _first_overload(load)
         if overload is None:
-            break
+            return weeks, overloaded_roles, load
         week, roles = overload
         phase_index = next(i for i, (start, end) in enumerate(_phase_bounds(weeks)) if start <= week <= end)
         weeks[phase_index] += 1
         overloaded_roles.setdefault(phase_index, set()).update(roles)
-    else:
-        raise InvalidDraftError([f"hacen falta más de {MAX_EXTRA_WEEKS} semanas extra para que el equipo quepa"])
+    raise InvalidDraftError([f"hacen falta más de {MAX_EXTRA_WEEKS} semanas extra para que el equipo quepa"])
+
+
+def build_plan(draft: EstimationDraft, deadline_weeks: int | None = None) -> ProjectPlan:
+    """Valida el borrador y devuelve un cronograma en el que nadie pasa del 100 % de dedicación.
+
+    Con `deadline_weeks`, las etapas se ajustan primero al plazo que pidió el cliente. Si así el
+    equipo no cabe en el plazo y partir de las semanas del modelo da un cronograma más corto, se
+    parte de las semanas del modelo: el alargue va etapa por etapa y, con las etapas apretadas,
+    puede alargar más de la cuenta.
+    """
+    validate_draft(draft)
+    proposed = [phase.weeks for phase in draft.phases]
+    planned = fit_to_deadline(proposed, deadline_weeks) if deadline_weeks is not None else proposed
+    weeks, overloaded_roles, load = _extend(draft, planned)
+    if deadline_weeks is not None and sum(weeks) > deadline_weeks and planned != proposed:
+        alternative = _extend(draft, proposed)
+        if sum(alternative[0]) < sum(weeks):
+            planned = proposed
+            weeks, overloaded_roles, load = alternative
 
     bounds = _phase_bounds(weeks)
     phases = tuple(
@@ -188,7 +241,7 @@ def build_plan(draft: EstimationDraft) -> ProjectPlan:
         for i, phase in enumerate(draft.phases)
     )
     adjustments = tuple(
-        f"La etapa {phases[i].number}, «{phases[i].name}», pasa de {phases[i].proposed_weeks} a "
+        f"La etapa {phases[i].number}, «{phases[i].name}», pasa de {planned[i]} a "
         f"{phases[i].weeks} semanas para que {', '.join(sorted(roles))} no pase de "
         f"{HOURS_PER_WEEK} horas por semana."
         for i, roles in sorted(overloaded_roles.items())
@@ -228,4 +281,6 @@ def build_plan(draft: EstimationDraft) -> ProjectPlan:
         base_hours_by_role=ordered,
         weekly_hours={role: tuple(load[role]) for role in ordered},
         adjustments=adjustments,
+        deadline_weeks=deadline_weeks,
+        fitted_to_deadline=planned != proposed,
     )

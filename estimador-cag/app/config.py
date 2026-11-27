@@ -8,7 +8,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal, Self
 
-from pydantic import SecretStr, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Ruta absoluta a estimador-cag/.env, para que funcione se ejecute desde donde se ejecute.
@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: SecretStr | None = None
     LLM_PROVIDER: Literal["openai", "anthropic"] = "anthropic"
     LLM_MODEL: str = "claude-haiku-5-5"
+    # Segundos que una llamada al LLM puede pasar sin recibir datos antes de fallar. No limita la
+    # duración total: con streaming, el contador vuelve a cero con cada fragmento que llega.
+    LLM_TIMEOUT_SECONDS: float = Field(default=180, gt=0)
 
     # Aplicación
     APP_ENV: Literal["development", "staging", "production"] = "development"

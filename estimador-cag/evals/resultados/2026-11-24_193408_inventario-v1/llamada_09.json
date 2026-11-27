@@ -1,0 +1,276 @@
+{
+  "run": 9,
+  "ok": true,
+  "model": "claude-haiku-5-5",
+  "input_tokens": 1656,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 7176,
+  "output_tokens": 8601,
+  "latency_ms": 34362,
+  "estimated_cost_usd": 0.004538,
+  "inventory": {
+    "is_software_project": true,
+    "not_software_reason": "",
+    "product_types": [
+      "incorporacion",
+      "formacion",
+      "seguridad_salud",
+      "asistente_rrhh",
+      "encuestas",
+      "analitica_personas"
+    ],
+    "platform": "web",
+    "platform_reason": "Las tablets están en las casetas de los supervisores y la cobertura es muy mala. Una web instalable funciona en tablet y sin conexión, y la reunión no pide nada que solo dé una app nativa. Frase de respaldo: «lo que hagamos tiene que funcionar sin conexión».",
+    "requirements": [
+      {
+        "description": "Cuentas y roles para persona nueva, supervisor, EHS y RR. HH., cada uno con sus permisos",
+        "status": "acordado",
+        "evidence": "La persona nueva hace los módulos de la Parte 46 ... y el supervisor marca en la tablet",
+        "component": "cuentas_y_roles",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Cuatro tipos de usuario con permisos distintos: criterio de M (más de un tipo de usuario)",
+        "custom_hours": []
+      },
+      {
+        "description": "Módulos de formación de la Parte 46 con videos cortos y cuestionarios, con seguimiento de cada persona",
+        "status": "acordado",
+        "evidence": "La persona nueva hace los módulos de la Parte 46 en inglés o en español, con videos cortos y cuestionarios",
+        "component": "lecciones_y_cuestionarios",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Varios módulos con videos, cuestionarios y seguimiento por persona: criterio de M (variantes y progreso)",
+        "custom_hours": []
+      },
+      {
+        "description": "Interfaz y módulos en inglés y en español",
+        "status": "acordado",
+        "evidence": "Un 40 % de la plantilla de cantera prefiere el español.",
+        "component": "varios_idiomas",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Dos idiomas para la interfaz y los módulos: primera versión",
+        "custom_hours": []
+      },
+      {
+        "description": "Funcionamiento sin conexión con sincronización de formación y firmas al recuperar cobertura",
+        "status": "acordado",
+        "evidence": "la cobertura es muy mala en varias, así que lo que hagamos tiene que funcionar sin conexión",
+        "component": "modo_sin_conexion",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Cobertura mala en varias canteras y datos de firma que sincronizar: M",
+        "custom_hours": []
+      },
+      {
+        "description": "Registro de formación por tarea que el supervisor marca en la tablet antes de que el trabajador haga cada tarea",
+        "status": "acordado",
+        "evidence": "el supervisor marca en la tablet la formación de cada tarea y firma ahí mismo",
+        "component": "a_medida",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "No hay componente de registro de formación por tarea con firma del supervisor. M por las reglas de formación previa a cada tarea",
+        "custom_hours": [
+          {
+            "role": "Liderazgo técnico",
+            "hours": 4
+          },
+          {
+            "role": "Backend",
+            "hours": 20
+          },
+          {
+            "role": "Frontend",
+            "hours": 16
+          },
+          {
+            "role": "Diseño UX/UI",
+            "hours": 6
+          },
+          {
+            "role": "QA",
+            "hours": 8
+          }
+        ]
+      },
+      {
+        "description": "Certificado 5000-23 generado automáticamente, guardado y firmado en pantalla por el supervisor",
+        "status": "acordado",
+        "evidence": "El certificado 5000-23 se genera solo y queda guardado.",
+        "component": "documentos_y_firmas",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Un formulario fijo generado y firmado en pantalla: primera versión. Sin horas de referencia en el catálogo",
+        "custom_hours": [
+          {
+            "role": "Full-stack",
+            "hours": 24
+          },
+          {
+            "role": "Frontend",
+            "hours": 12
+          },
+          {
+            "role": "Diseño UX/UI",
+            "hours": 6
+          },
+          {
+            "role": "QA",
+            "hours": 6
+          }
+        ]
+      },
+      {
+        "description": "Aviso a cada persona antes de que venza su reciclaje anual de formación",
+        "status": "acordado",
+        "evidence": "Que avise antes de que venza el reciclaje anual de cada persona.",
+        "component": "notificaciones",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Un tipo de recordatorio programado por vencimiento: primera versión",
+        "custom_hours": []
+      },
+      {
+        "description": "Panel por cantera con quién está al día, formación pendiente y vencimientos del mes, usable en inspecciones",
+        "status": "acordado",
+        "evidence": "Un panel para mí, por cantera: quién está al día, quién tiene formación pendiente y qué vence este mes.",
+        "component": "paneles_y_reportes",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Indicadores con filtros por cantera y varios tipos de usuario: M",
+        "custom_hours": []
+      },
+      {
+        "description": "Asistente en la tablet que responde solo con los manuales de seguridad y procedimientos, cita la fuente y deriva al supervisor si no hay respuesta",
+        "status": "acordado",
+        "evidence": "Nos gustaría un asistente en la tablet que responda con nuestros manuales de seguridad y procedimientos. Son unos 40 documentos.",
+        "component": "asistente_sobre_documentos",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Unos 40 documentos, cita de fuente, rechazo de respuestas sin base y conjunto de preguntas de evaluación: M",
+        "custom_hours": []
+      },
+      {
+        "description": "Encuesta corta de seguimiento a los 30, 60 y 90 días de la incorporación",
+        "status": "acordado",
+        "evidence": "un seguimiento a los 30, 60 y 90 días con una encuesta corta",
+        "component": "encuestas",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Una encuesta corta con tres envíos programados: primera versión. Sin horas de referencia en el catálogo",
+        "custom_hours": [
+          {
+            "role": "Backend",
+            "hours": 16
+          },
+          {
+            "role": "Frontend",
+            "hours": 12
+          },
+          {
+            "role": "Diseño UX/UI",
+            "hours": 4
+          },
+          {
+            "role": "QA",
+            "hours": 6
+          }
+        ]
+      },
+      {
+        "description": "Análisis de rotación de los nuevos por cantera y por supervisor, a partir de la historia de cada persona",
+        "status": "acordado",
+        "evidence": "cruzarlo con la rotación por cantera y por supervisor",
+        "component": "analitica_de_personas",
+        "size": "M",
+        "quantity": 1,
+        "size_reason": "Historia de altas, bajas y cambios de supervisor con cruces por cantera y supervisor: M. Sin horas de referencia en el catálogo",
+        "custom_hours": [
+          {
+            "role": "Ingeniería de datos",
+            "hours": 30
+          },
+          {
+            "role": "Ciencia de datos",
+            "hours": 16
+          },
+          {
+            "role": "Backend",
+            "hours": 8
+          },
+          {
+            "role": "Frontend",
+            "hours": 12
+          },
+          {
+            "role": "QA",
+            "hours": 6
+          }
+        ]
+      },
+      {
+        "description": "Lectura de empleados del HRIS, que tiene API, para cruzar con la rotación y dar de alta a los nuevos",
+        "status": "acordado",
+        "evidence": "El HRIS, que tiene API",
+        "component": "integracion_hris",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Solo lectura de empleados para el cruce. El sistema no está identificado y se revisa en las decisiones abiertas",
+        "custom_hours": []
+      },
+      {
+        "description": "Piloto de la solución en dos canteras, con formación a los usuarios y acompañamiento en sus sedes",
+        "status": "condicionado",
+        "evidence": "Podríamos empezar con un piloto en dos canteras.",
+        "component": "formacion_y_cambio",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Piloto en dos canteras: primera versión. Depende de que el cliente confirme el piloto. Sin horas de referencia en el catálogo",
+        "custom_hours": [
+          {
+            "role": "Consultoría de RR. HH.",
+            "hours": 24
+          },
+          {
+            "role": "Liderazgo técnico",
+            "hours": 4
+          }
+        ]
+      },
+      {
+        "description": "Formación de riesgos del lugar para contratistas que entran a las canteras",
+        "status": "opcional",
+        "evidence": "Si se puede incluir, mejor, pero no es lo principal.",
+        "component": "lecciones_y_cuestionarios",
+        "size": "S",
+        "quantity": 1,
+        "size_reason": "Contenido distinto para contratistas, sin decisión tomada: primera versión",
+        "custom_hours": []
+      }
+    ],
+    "open_decisions": [
+      {
+        "question": "¿Qué sistema de RR. HH. es el HRIS actual?",
+        "options": [
+          "BambooHR",
+          "Rippling",
+          "Gusto",
+          "UKG",
+          "ADP",
+          "Otro"
+        ],
+        "assumed": "Otro",
+        "evidence": "El HRIS, que tiene API"
+      },
+      {
+        "question": "¿La formación de contratistas entra en esta fase?",
+        "options": [
+          "Incluir en esta fase",
+          "Fase posterior"
+        ],
+        "assumed": "Fase posterior",
+        "evidence": "Si se puede incluir, mejor, pero no es lo principal."
+      }
+    ]
+  }
+}
