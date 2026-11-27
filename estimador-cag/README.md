@@ -39,7 +39,7 @@ transcripción ─► LLM 2 (system prompt: rol + 3 estimaciones de referencia +
 
 ## Instalación
 
-El proyecto está en la rama `entregable-session-3`, no en `main`: un `git clone` sin rama descarga `main`, que es el material de referencia del máster y no tiene esta carpeta. Descarga directamente la rama:
+Esta versión está en la rama `entregable-session-3`. Un `git clone` sin rama descarga `mis-entregables`, que tiene la última versión ya entregada y no la de esta sesión. Descarga directamente la rama:
 
 ```bash
 git clone -b entregable-session-3 https://github.com/juli-amezquita/ai-engineering.git
