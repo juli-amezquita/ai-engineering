@@ -39,10 +39,10 @@ transcripción ─► LLM 2 (system prompt: rol + 3 estimaciones de referencia +
 
 ## Instalación
 
-El proyecto está en la rama `entregable-session-2`, no en `main`: un `git clone` sin rama descarga `main`, que es el material de referencia del máster y no tiene esta carpeta. Descarga directamente la rama:
+El proyecto está en la rama `entregable-session-3`, no en `main`: un `git clone` sin rama descarga `main`, que es el material de referencia del máster y no tiene esta carpeta. Descarga directamente la rama:
 
 ```bash
-git clone -b entregable-session-2 https://github.com/juli-amezquita/ai-engineering.git
+git clone -b entregable-session-3 https://github.com/juli-amezquita/ai-engineering.git
 cd ai-engineering/estimador-cag
 uv sync
 cp .env.example .env
