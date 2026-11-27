@@ -541,7 +541,7 @@ def build_client_proposal(pricing: ProjectPricing) -> str:
     add("")
     add("### Honorarios profesionales")
     add("")
-    add("| Consultor | Horas | Tarifa (USD/h) | Importe (USD) |")
+    add("| Actividad | Horas | Tarifa (USD/h) | Importe (USD) |")
     add("|---|---|---|---|")
     for line in pricing.lines:
         add(f"| {line.role.name} | {number(line.base_hours)} | {rate(line.client_rate)} | {number(line.client_amount)} |")

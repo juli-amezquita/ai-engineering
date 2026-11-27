@@ -44,7 +44,7 @@ Una app para tablet que funciona sin conexión, en inglés y español. La person
 
 ### Honorarios profesionales
 
-| Consultor | Horas | Tarifa (USD/h) | Importe (USD) |
+| Actividad | Horas | Tarifa (USD/h) | Importe (USD) |
 |---|---|---|---|
 | Gestión de proyecto | 168 | 157.22 | 26,413 |
 | Consultoría de RR. HH. | 80 | 141.24 | 11,299 |

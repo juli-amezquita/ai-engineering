@@ -50,6 +50,7 @@ def test_client_proposal_adds_up_and_hides_costs(example):
     for word in HIDDEN_FROM_CLIENT:
         assert word not in proposal, f"la propuesta no debería decir {word!r}"
     assert "## 6. Cronograma de implementación" in proposal
+    assert "| Actividad | Horas | Tarifa (USD/h) | Importe (USD) |" in proposal
 
 
 @pytest.mark.parametrize("example", ESTIMATION_EXAMPLES)

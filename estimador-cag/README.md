@@ -2,7 +2,7 @@
 
 Servicio FastAPI que estima proyectos de software a partir de la transcripción de una reunión con un cliente, con arquitectura **CAG** (*Cache-Augmented Generation*): el catálogo de componentes y las estimaciones de referencia de la consultora viajan en el system prompt de cada llamada al LLM.
 
-Es el entregable de la sesión 2 del Máster en AI Engineering de LIDR. La consultora, los clientes y las cifras son ficticios: una consultora pequeña del sur de California que hace productos de RR. HH. y People Analytics para empresas de cemento, hormigón premezclado, áridos y minería.
+Es el entregable de la sesión 2 del Máster en AI Engineering de LIDR, con la interfaz de chat de la sesión 3 en curso. La consultora, los clientes y las cifras son ficticios: una consultora pequeña del sur de California que hace productos de RR. HH. y People Analytics para empresas de cemento, hormigón premezclado, áridos y minería.
 
 ## Cómo funciona
 
@@ -70,6 +70,18 @@ uv run uvicorn app.main:app --reload
 
 - Swagger: <http://localhost:8000/docs> (también ReDoc en `/redoc`).
 - Estado del servicio: `GET /health`.
+
+## Interfaz de chat (sesión 3)
+
+```bash
+uv run streamlit run streamlit_app.py
+```
+
+Se abre en <http://localhost:8501>. Pega la transcripción de la reunión en el chat: en alrededor de un minuto, la respuesta trae dos pestañas, el informe interno y la propuesta para el cliente. Cada mensaje es una estimación nueva e independiente, y las anteriores siguen en pantalla hasta que se recarga la página. Mientras se estima, la caja de texto se desactiva.
+
+No hace falta arrancar FastAPI: la interfaz llama al mismo servicio que el endpoint, así que el system prompt, el catálogo, las referencias y los cálculos son los mismos, y lee la API key del mismo `.env`. Valida la transcripción con las mismas reglas (de 50 a 200,000 caracteres) y explica los errores en el chat.
+
+`.streamlit/config.toml` hace que la interfaz escuche solo en `localhost`, para que nadie de la red local la use con tu API key, y desactiva las estadísticas de uso de Streamlit.
 
 ## Probar
 
@@ -161,9 +173,11 @@ estimador-cag/
 ├── evals/
 │   ├── consistency.py             # evaluador de consistencia: la misma transcripción varias veces
 │   └── inventory_consistency.py   # lo mismo para el inventario: componentes y horas del catálogo
-├── tests/                         # pytest: estructura, cálculos, servicio del LLM, API y evaluador
+├── tests/                         # pytest: estructura, cálculos, servicio del LLM, API, evaluador e interfaz
 ├── transcripciones/               # transcripción de prueba
 ├── ejemplos-de-salida/            # respuesta, informe interno y propuesta de una llamada real
+├── streamlit_app.py               # interfaz de chat (sesión 3)
+├── .streamlit/config.toml         # la interfaz solo escucha en localhost y sin estadísticas de uso
 ├── .env.example
 └── pyproject.toml / uv.lock
 ```
@@ -255,7 +269,8 @@ Los tests no usan la clave real ni llaman a la API: fijan una clave falsa, no le
 - `/health`, Swagger, el endpoint, cada código de error, también el 504 cuando la respuesta deja de llegar dos veces, y que el servidor no arranque sin la clave;
 - el inventario y las horas del catálogo, la llamada que completa las horas que faltan y el error si siguen faltando, y la unión del inventario con el plan: cada partida en sus etapas, la gestión y el QA en todas, y el rechazo de un plan que deja partidas fuera;
 - el plazo: el paso de meses a semanas, el ajuste de las etapas, el aviso cuando el equipo no cabe y que apretar las etapas nunca dé un cronograma más largo que el del modelo;
-- los evaluadores de consistencia, con un generador simulado en lugar del modelo.
+- los evaluadores de consistencia, con un generador simulado en lugar del modelo;
+- la interfaz de chat, con `AppTest` de Streamlit y un estimador simulado: los dos informes, que del HTML del informe solo pasen los `<br>` del cronograma, el historial después de varias estimaciones, que un texto corto no llegue al modelo, el mensaje cuando la transcripción no es un proyecto y que sin clave no se abra el chat.
 
 El workflow `.github/workflows/estimador-cag.yml` lo ejecuta en GitHub Actions en cada push a `mis-entregables` o a una rama `entregable-session-*`. Instala las dependencias exactas de `uv.lock`, pasa los tests y arranca el servidor de verdad para comprobar `/health` y `/docs`.
 
@@ -268,6 +283,7 @@ El workflow `.github/workflows/estimador-cag.yml` lo ejecuta en GitHub Actions e
 - **Contexto sin dinero.** El system prompt no lleva tarifas, costos, márgenes ni ubicaciones: el modelo no los necesita y así no pueden llegar a la propuesta.
 - **Prompt caching** en los dos system prompts (unos 7,200 tokens el del inventario y 18,500 el del plan): las llamadas siguientes pagan esa entrada a una décima parte.
 - **`AsyncAnthropic`** con `await`, para no bloquear el event loop de FastAPI.
+- **La interfaz de chat importa el servicio en vez de llamar al endpoint.** Basta un `streamlit run`, y el system prompt es el del endpoint por construcción. Es además lo que pide el ejercicio de la sesión 3: conectar Streamlit sin wrapper, para ver el acoplamiento antes de resolverlo. El servicio es asíncrono y Streamlit no, así que cada estimación corre con `asyncio.run`. La interfaz no tiene lógica de negocio: cuando exista un endpoint con streaming, podrá consumirlo, y cambiarla por otra solo tocará `streamlit_app.py`.
 - **Tres minutos sin datos y la llamada se da por colgada.** El SDK espera 600 segundos sin recibir datos, y en una tanda del evaluador cuatro de diez llamadas tardaron 10 minutos en fallar (`evals/resultados/2026-11-25_131801_estimacion-con-plazo`). El tiempo de espera tampoco puede ser corto, porque mientras el modelo piensa la API no envía nada: en una estimación medida, ese silencio duró 23 y 25 segundos, y en la llamada más larga de las tandas (16,700 tokens en 68 segundos) rondaría el minuto. Con 180 segundos (`LLM_TIMEOUT_SECONDS`), una llamada colgada falla a los 3 minutos y cabe incluso una respuesta que gaste pensando los 32,000 tokens de `max_tokens`. Si la respuesta deja de llegar a mitad, el SDK no la reintenta y deja pasar el error de su librería HTTP. Por eso `llm_service` repite la llamada una vez, y si vuelve a colgarse, convierte el error en el de tiempo de espera del SDK para que el endpoint responda 504 y no 500. En la tanda en la que se colgaron cuatro de diez llamadas, las cuatro ya habían empezado a responder: es justo el caso que el SDK no cubre. Cada llamada registra cuántas veces se repitió (`retries`), y el evaluador lo guarda con el resto de la llamada.
 - **El cliente y la configuración se cargan tarde:** importar la app no necesita clave, pero el servidor no arranca sin ella.
 - **Logs:** `LOG_LEVEL` solo afecta a la aplicación; las librerías solo muestran advertencias, para que las transcripciones, con datos de empleados, no acaben en el log.

@@ -1,0 +1,10 @@
+# Configuración de la interfaz de chat (streamlit_app.py).
+
+[server]
+# Solo desde este equipo: la interfaz gasta la API key de quien la arranca, así que nadie de la red
+# local debe poder usarla. Por defecto, Streamlit escucha en todas las interfaces.
+address = "localhost"
+
+[browser]
+# Streamlit envía estadísticas de uso por defecto.
+gatherUsageStats = false
