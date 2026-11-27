@@ -2,7 +2,7 @@
 
 Este es mi fork del repositorio del máster. Las ramas `main`, `session_N` y `session_N_live` son el material de referencia de los mentores. Mi trabajo vive en estas ramas:
 
-- **`mis-entregables`**: la rama base. Acumula mi versión del proyecto guía (el estimador de software) sesión a sesión.
+- **`mis-entregables`**: la rama base y la rama por defecto del repositorio. Acumula mi versión del proyecto guía (el estimador de software) sesión a sesión, y este README es el índice de los entregables: cada uno aparece en la tabla desde que empieza, con el enlace a su rama.
 - **`entregable-session-N`**: el ejercicio de cada sesión. Nace de `mis-entregables`, se entrega por enlace y, una vez entregada, se fusiona en `mis-entregables` y no vuelve a cambiar.
 
 ## Entregables
@@ -10,6 +10,7 @@ Este es mi fork del repositorio del máster. Las ramas `main`, `session_N` y `se
 | Sesión | Tema | Rama | Fecha límite | Estado |
 |---|---|---|---|---|
 | 2 | Scaffolding FastAPI con arquitectura CAG | [`entregable-session-2`](../../tree/entregable-session-2) | 2026-11-22 | Entregado |
+| 3 | Wrappers de modelos y arquitectura de capas | [`entregable-session-3`](../../tree/entregable-session-3) | 2026-11-30 | En curso |
 
 ## Proyecto
 
